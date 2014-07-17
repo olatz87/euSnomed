@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+Hierarkia = {
+    'FORCE' : ("190","78621006"),
+    'METADATA' :("200","900000000000441003"),
+    'SPECIAL' : ("170","370115009"),
+    'RECORD' : ("180","419891008"),
+    'BODYSTRUCTURE' : ("040","123037004"),
+    'PROCEDURE' : ("020","71388002"),
+    'CLINICAL' : ("010","404684003"),
+    'EVENT' : ("090","272379006"),
+    'SITUATION' : ("100","243796009"),
+    'SOCIAL' : ("110","48176007"),
+    'OBJECT' : ("120","260787004"),
+    'SPECIMEN' : ("130","123038009"),
+    'ENVIRONMENT' : ("140","308916002"),
+    #'LINKAGE' : ("150","419891008"),
+    'STAGING' : ("160","254291000"),
+    'QUALIFIER' : ("070","362981000"),
+    'OBSERVABLE' : ("080","363787002"),
+    'SUBSTANCE' : ("050","105590001"),
+    'PHARMPRODUCT' : ("060","373873005"),
+    'ORGANISM' : ("030","410607006")}
+
+SemanticTag = {
+    'Disorder' : ("011","disorder","trastorno"),
+    'Finding' : ("012","finding","hallazgo"),
+    'Procedure' : ("021","procedure","procedimiento"),
+    'RegimeTherapy' : ("022","regime/therapy","régimen/tratamiento"),
+    'Organism' : ("031","organism","organismo"),
+    'BodyStructure' : ("041","body structure","estructura corporal"),
+    'MophologicAbnor' : ("042","morphologic abnormality","anomalía morfológica"),
+    'Cell' : ("043","cell","célula"),
+    'CellStructure' : ("044","cell structure","esttructura celular"),
+    'Substance' : ("051","substance","sustancia"),
+    'Product' : ("061","product","producto"),
+    'QualifierValue' : ("071","qualifier value","calificador"),
+    'ObservableEntity' : ("081","observable entity","entidad observable"),
+    'Event' : ("091","event","evento"),
+    'Situation' : ("101","situation","situación"),
+    'Occupation' : ("111","occupation","ocupación"),
+    'Person' : ("112","person","persona"),
+    'EthnicGroup' : ("113","ethnic group","grupo étnico"),
+    'ReligionPhilosophy' : ("114","religion/philosophy","religión/filosofía"),
+    'LifeStyle' : ("115","life style","estilo de vida"),
+    'SocialConcept' : ("116","social concept","contexto social"),
+    'RacialGroup' : ("117","racial group","grupo racial"),
+    'PhysicalObject' : ("121","physical object","objeto físico"),
+    'Specimen' : ("131","specimen","espécimen"),
+    'Environment' : ("141","environment","medio ambiente"),
+    'GeographicLocation' : ("142","geographic location","localización geográfica"),
+    'EnvironmentLocation' : ("143","environment/location","medio ambiente/localización"),
+    'Attribute' : ("151","attribute","atributo"),
+    'LinkAssertion' : ("152","link assertion","relación asertiva"),
+    'LinkageConcept' : ("153","linkage concept","concepto de enlace"),
+    'AssessmentScale' : ("161","assessment scale","escala de evaluación"),
+    'TumorStaging' : ("162","tumor staging","estadificación tumoral"),
+    'StagingScale' : ("163","staging scale","escala de estadificación"),
+    'NavigationalConcept' : ("171","navigational concept","concepto para navegación"),
+    'NamespaceConcept' : ("172","namespace concept","espacio de nombres"),
+    'AdministrativeConcept' : ("173","administrative concept","concepto administrativo"),
+    'SpecialConcept' : ("174","special concept","concepto especial"),
+    'RecordArtifact' : ("181","record artifact","elemento de registro"),
+    'PhysicalForce' : ("191","physical force","fuerza física"),
+    'FoundationMetadata' : ("201","foundation metadata concept","metadato fundacional"),
+    'CoreMetadata' : ("202","core metadata concept","metadato de núcleo"),
+    'Hutsa' : ("000","","")}
+
+Iturburua = {
+    'MapGNS' : ('000',0),
+    'Elhuyar' : ('001',5),
+    'ZT' : ('002',1) ,
+    'Erizaintza' : ('003',3),
+    'AdminSan' : ('004',7),
+    'Anatomia' : ('005',2),
+    'GNS10' : ('006',4),
+    'EuskalTerm' : ('007',6),
+    'Drogak' : ('008',9),
+    'Sexologia' : ('009',8),
+    'Morfologia' : ('101',0),
+    'Sintaxia' : ('102',0),
+    'Matxin' : ('200',0)}
+
+CaseSignificance = {
+    'Sensitive' : "900000000000017005",
+    'Insensitive' : "900000000000448009",
+    'InitialInsensitive' : "900000000000020002",
+    'Unknown' : ''}
+
+PartOfSpeech = {
+    'Izen' : 1 ,
+    'Izenondo' : 2,
+    'Izenlagun' : 3, 
+    'Adjektibo' : 4 ,
+    'IzenBerezi' : 5 ,
+    'Aditz' : 6 ,
+    'Aditzondo' : 7 ,
+    'Besterik' : 8}
+
+
+TermType ={
+    'Abbreviation' : 1,
+    'Acronym' : 2,
+    'TranscribedForm' : 3,
+    'SetPhrase' : 4,
+    'Unknown' : 5}
