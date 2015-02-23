@@ -1,11 +1,84 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import subprocess,codecs
+import subprocess,codecs,glob
 from util.snomedtbx import SnomedTBX
 from util.enumeratuak import Hierarkia,SemanticTag
 
 class Snomed:
 
+    def defTypeBanatu(self,engPath,spaPath,path):
+        engDef = glob.glob(engPath+'/Terminology/*Description*.txt')[0]
+        spaDef = glob.glob(spaPath+'/Terminology/*Description*.txt')[0]
+        engLan = glob.glob(engPath+'/Refset/Language/*Language*.txt')[0]
+        spaLan = glob.glob(spaPath+'/Refset/Language/*Language*.txt')[0]
+        engRel = glob.glob(engPath+'/Terminology/*Relationship*.txt')[0]
+        engPreSet = set()
+        with codecs.open(engLan,encoding='utf-8') as fin:
+            for line in fin:
+                lerroa = line.strip().split('\t')
+                if lerroa[2] == '1' and lerroa[6] == "900000000000548007":
+                    engPreSet.add(lerroa[5])
+        #print(len(engPreSet))
+        engSyn = ''
+        engPre = ''
+        engFsn = ''
+        with codecs.open(engDef,encoding='utf-8') as fin:
+            for line in fin:
+                line = line.strip()
+                lerroa = line.split('\t')
+                if lerroa[2] == '1' and lerroa[6] == "900000000000003001":
+                    engFsn += line+'\n'
+                elif lerroa[2] == '1':
+                    if lerroa[0] in engPreSet:
+                        engPre += line+'\n'
+                    else:
+                        engSyn += line+'\n'
+        with codecs.open(path+'/snomed/fsn_eng_active.txt','w',encoding='utf-8') as fout:
+            fout.write(engFsn)
+        print("fsn_eng_active.txt sortua\t"+str(engFsn.count('\n')+1))
+        with codecs.open(path+'/snomed/pre_eng_active.txt','w',encoding='utf-8') as fout:
+            fout.write(engPre)
+        print("pre_eng_active.txt sortua\t"+str(engPre.count('\n')+1))
+        with codecs.open(path+'/snomed/syn_eng_active.txt','w',encoding='utf-8') as fout:
+            fout.write(engSyn)
+        print("syn_eng_active.txt sortua\t"+str(engSyn.count('\n')+1))
+        spaPreSet = set()
+        with codecs.open(spaLan,encoding='utf-8') as fin:
+            for line in fin:
+                lerroa = line.strip().split('\t')
+                if lerroa[2] == '1' and lerroa[6] == "900000000000548007":
+                    spaPreSet.add(lerroa[5])
+        spaSyn = ''
+        spaPre = ''
+        spaFsn = ''
+        with codecs.open(spaDef,encoding='utf-8') as fin:
+            for line in fin:
+                line = line.strip()
+                lerroa = line.split('\t')
+                if lerroa[2] == '1' and lerroa[6] == "900000000000003001":
+                    spaFsn += line+'\n'
+                elif lerroa[2] == '1':
+                    if lerroa[0] in spaPreSet:
+                        spaPre += line+'\n'
+                    else:
+                        spaSyn += line+'\n'
+
+        with codecs.open(path+'/snomed/fsn_spa_active.txt','w',encoding='utf-8') as fout:
+            fout.write(spaFsn)
+            print("fsn_spa_active.txt sortua\t"+str(spaFsn.count('\n')+1))
+        with codecs.open(path+'/snomed/pre_spa_active.txt','w',encoding='utf-8') as fout:
+            fout.write(spaPre)
+            print("pre_spa_active.txt sortua\t"+str(spaPre.count('\n')+1))
+        with codecs.open(path+'/snomed/syn_spa_active.txt','w',encoding='utf-8') as fout:
+            fout.write(spaSyn)
+            print("syn_spa_active.txt sortua\t"+str(spaSyn.count('\n')+1))
+        isa = ''
+        with codecs.open(engRel,encoding='utf-8') as fin:
+            for line in fin:
+                line = line.strip()
+                lerroa = line.split('\t')
+                if lerroa[2] == '1' and lerroa[7] == "116680003":
+                    isa += line+'\n'
 
     def isaKargatu(self,path):
         #SNOMED CT-ren IS-a erlazioak kargatu egiten ditu eta hash batean sartuta itzultzen ditu, 
@@ -29,7 +102,7 @@ class Snomed:
             for lag in setOna:
                 if lag in hierarkiak:
                     if hierarkiak[lag] != hie:
-                        print("Kontzeptu berdina bi hierarkiatan aurkitzen da "+lag+" "+hierarkiak[lag]+" vs "+name)
+                        print("Kontzeptu berdina bi hierarkiatan aurkitzen da "+lag+" "+hierarkiak[lag]+" vs "+hie)
                 else:
                     irte += lag + '\n'
                     hierarkiak[lag] = hie
@@ -38,7 +111,7 @@ class Snomed:
             return irte
                     
     def fsnBanatu(self,path):
-        with codecs.open(path+'/snomed/fsn_eng_active.txt_iso') as fsnFitx:
+        with codecs.open(path+'/snomed/fsn_eng_active.txt') as fsnFitx:
             fsnak = {}
             for lerroa in fsnFitx:
                 lerroa = lerroa.decode('utf-8').strip()
@@ -79,8 +152,8 @@ class Snomed:
     def presynBanatu(self,path,presyn):
         preEnak = {}
         if presyn == 'pre':
-            enfitx = path+'/snomed/pre_eng_active.txt_iso'
-            esfitx = path+'/snomed/pre_spa_active.txt_iso'
+            enfitx = path+'/snomed/pre_eng_active.txt'
+            esfitx = path+'/snomed/pre_spa_active.txt'
             disEnfitx = '_DIS_pre_eng.txt'
             finEnfitx = '_FIN_pre_eng.txt'
             irtEnfitx = '_pre_eng.txt'
@@ -88,8 +161,8 @@ class Snomed:
             finEsfitx = '_FIN_pre_spa.txt'
             irtEsfitx = '_pre_spa.txt'
         else:
-            enfitx = path+'/snomed/syn_eng_active.txt_iso'
-            esfitx = path+'/snomed/syn_spa_active.txt_iso'
+            enfitx = path+'/snomed/syn_eng_active.txt'
+            esfitx = path+'/snomed/syn_spa_active.txt'
             disEnfitx = '_DIS_syn_eng.txt'
             finEnfitx = '_FIN_syn_eng.txt'
             irtEnfitx = '_syn_eng.txt'
@@ -101,6 +174,8 @@ class Snomed:
             for lerroa in enPreFitx:
                 lerroa = lerroa.strip()
                 if lerroa:
+                    if len(lerroa.split('\t')) < 4:
+                        print(lerroa)
                     cId = lerroa.split('\t')[4]
                     if cId in preEnak:
                         lag = preEnak.get(cId)+'\n'+lerroa
@@ -172,6 +247,7 @@ class Snomed:
                 with codecs.open(path+'/snomed/hierarkiak/'+hie+irtEsfitx,'w',encoding='utf-8') as fitx:
                     fitx.write(preEs)
                 print(hie+irtEsfitx+' sortua\t'+str(preEs.count('\n')+1))
+
     def hierarkiakBanatu(self,path):
         isaRel = self.isaKargatu(path)
         hierarkiak = {}
@@ -201,12 +277,12 @@ class Snomed:
         
     def __init__(self,berria,path):
         if berria:
-            engPath = '/home/olatz/Dropbox/Doktoretza/SNOMED/SNOMED/SnomedCT_Release_INT_20140131/RF2Release/Snapshot'
-            spaPath = '/home/olatz/Dropbox/Doktoretza/SNOMED/SNOMED/SnomedCT_Release-es_INT_20131031/RF2Release/Snapshot'
+            engPath = '/sc01a7/users/ixamed/BaliabideSemantikoak/SnomedCT_RF2Release_INT_20150131/Snapshot/'
+            spaPath = '/sc01a7/users/ixamed/BaliabideSemantikoak/SnomedCT_SpanishRelease_INT_20141031/RF2Release/Snapshot/'
+            self.defTypeBanatu(engPath,spaPath,path)
             #p1 = subprocess.call(['perl '+path+'defTypeBanatu.pl '+engPath+' '+spaPath],shell=True)
             print('defTypeBanatu eginda!')
             self.hierarkiakBanatu(path)
-            #p2 = subprocess.call(['java -jar '+path+'hierarkiakBanatu4.3.jar '+path],shell=True)
             snoTBX = SnomedTBX(path)
             snoTBX.xmltanBanatu()
             print('Snomed XMLtan banatua!')
@@ -256,4 +332,22 @@ class Snomed:
 
     def getKontzeptuIdak(self):
         return self.snoTBX.getKontzeptuIdak()
+        
+    def getTerminoak(self,hizkuntza):
+        return self.snoTBX.getTerminoak(hizkuntza)
+
+    def pareaJaso(self,terminoa):
+        return self.snoTBX.pareaJaso(terminoa)
+
+    def getItzuliGabeak(self,hizkuntza):
+        return self.snoTBX.getItzuliGabeak(hizkuntza)
+
+    def getItzuliakSinonimoak(self,hizkuntza):
+        return self.snoTBX.getItzuliak(hizkuntza)
+
+    def getItzuliak(self,hizkuntza):
+        return self.snoTBX.getItzuliak(hizkuntza)
+
+    def getMorfologiakBakarrik(self):
+        return self.snoTBX.getMorfologiakBakarrik()
 

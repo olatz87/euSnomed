@@ -10,95 +10,9 @@ from util.terminotbxsnomed import TerminoTBXSnomed
 from util.kontzeptutbx import KontzeptuTBX
 from util.snomedtbx import SnomedTBX
 import scriptak.morfosemantika as MS
-import scriptak.pharma_itzuli as PI
-
-def itzuli(snomed,itzulDBeng,itzulDBspa,ema,path,engHash,spaHash):
-    hie = snomed.getHierarkia()
-    if hie == 'CLINICAL' or hie == 'SITUATION' or hie == 'EVENT':
-        print('GNS Mapaketa')
-        snomed.mapGNS(ema)
-    print('Algoritmoa martxan')
-    i = 0
-    denera = len(snomed.getKontzeptuak())
-    sys.stdout.write("\r%d / %d" %(i,denera))
-    sys.stdout.flush()
-    zbD = path+'/zerrendaBeltzak/'
-    zb = {}
-    if os.path.isfile(zbD+hie.lower()+'-ZB.txt'):
-        with codecs.open(zbD+hie.lower()+'-ZB.txt',encoding='utf-8') as fitx:
-            print(hie,"zerrenda beltza kargatuta")
-            for line in fitx:
-                lagLine = line.strip().split('\t')
-                for ll in lagLine[1:]:
-                    ll = ll.strip()
-                    if ll:
-                        lista = zb.get(lagLine[0],[])
-                        lista.append(ll)
-                        zb[lagLine[0]] = lista
-    for kontzeptu in snomed.getKontzeptuak():
-        
-        konTBX = KontzeptuTBX(kontzeptu)
-        #Aurrenik gaztelaniazko hiztegietatik elikatu
-        #if i%10 == 0:
-        
-        for el in konTBX.getTerminoak('es'):
-            #Terminoen kontaketa egiten da estatistikak ateratzeko, zenbat termino ditugun hitz bakarrekoak....
-            terminoS = TerminoTBXSnomed(el)
-            #term = terminoS.getNormalizatua()
-            term = terminoS.getTerminoa()
-            termL = len(term.split())
-            ema.gehiToken(termL,'denera','es')
-            #ordList = itzulDBspa.jaso(term)
-            ordList = spaHash.get(term.lower(),None)
-            if ordList:
-               ema.gehiToken(termL,'itzulia','es')
-               konTBX.eguneratu(ordList,el,ema,zb)
-               ema.setTerminoa(term,'es','bai')
-            else:
-                ema.setTerminoa(term,'es','ez')
-        for el in konTBX.getTerminoak('en'):
-            itzulia = False
-            terminoS = TerminoTBXSnomed(el)
-            term = terminoS.getTerminoa()
-            termL = len(term.split())
-            ema.gehiToken(termL,'denera','en')
-            #Lehehengo urratsa
-            #ordList = itzulDBeng.jaso(term)
-            ordList = engHash.get(term.lower(),None)
-            #print(term.lower(),len(engHash))
-            if ordList:
-                ema.gehiToken(termL,'itzulia','en')
-                konTBX.eguneratu(ordList,el,ema,zb)
-                ema.setTerminoa(term,'en','bai')
-                itzulia = True
-            if not itzulia:
-                if termL == 1:
-                    if hie == "PHARMPRODUCT" or hie == "SUBSTANCE":
-                        irteera = PI.main(['-t',term[0].lower()+term[1:]]).split('\t')
-                    else:
-                        irteera = MS.main(['-t',term.lower()]).split('\t')
-                    if '+?' not in irteera[0]:
-                        ema.gehiToken(termL,'itzulia','en')
-                        if terminoS.getUsageNote() == 'Sensitive':
-                            listLag = []
-                            for irt in irteera:
-                                listLag.append(irt.capitalize())
-                            irteera = listLag
-                        ordList = itzulDBeng.gehitu(irteera,term,'Morfologia',terminoS.getUsageNote(),'Izen','TranscribedForm',7)
-                        engHash[term.lower()] = ordList
-                        konTBX.eguneratu(ordList,el,ema,zb)
-                        ema.setTerminoa(term,'en','bai')
-                        itzulia = True
-            if not itzulia:
-                ema.setTerminoa(term,'en','ez')
-        i += 1
-        sys.stdout.write("\r%d / %d" %(i,denera))
-        sys.stdout.flush()
-    print()
-
 
 def main(argv):
-    path = '../../euSnomed/'
+    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/'
     snoBool = False
     itzulBool = False
     try:
@@ -122,15 +36,12 @@ def main(argv):
         itLag = ItzulDB(path,hizkuntza,itzulBool)
         itLag = None
     itzulDBeng = ItzulDB(path,0)#en
-    itzulEnHash = itzulDBeng.toHash()
     print('Ingelesezko ItzulDB kargatuta')
     itzulDBspa = ItzulDB(path,1)#es
-    itzulSpHash = itzulDBspa.toHash()
     print('Gaztelaniazko ItzulDB kargatuta')
     date = datetime.datetime.now()
     emFitx = path+'/emaitzak/emaitza'+str(date.year)+str(date.month)+str(date.day)+'.'+str(date.hour)+str(date.minute)
     proba = False
-    #Hierarkia = ["BODYSTRUCTURE"]
     for hie in Hierarkia:
         #hie = 'FORCE'
         i = 1
@@ -143,7 +54,7 @@ def main(argv):
             print(hie+cli[j],end='\t')
             snomed.kargatu(hie,cli[j])
             print('Snomed kargatuta')
-            itzuli(snomed,itzulDBeng,itzulDBspa,ema,path,itzulEnHash,itzulSpHash)
+            itzuli(snomed,itzulDBeng,itzulDBspa,ema,path)
             snomed.gorde()
             ema.setKontzeptuakItzulita(snomed.getItzulitakoKontzeptuKop())
             ema.setOrdainakItzulita(snomed.getItzulitakoOrdainKop())
@@ -162,7 +73,7 @@ def main(argv):
         if proba :
             break
     itzulDBeng.fitxategianGorde()
-    #itzulDBspa.fitxategianGorde()
+    itzulDBspa.fitxategianGorde()
     #with open(emFitx) as fem:
 
 def semanticTagKopuruakLortu(hizkuntza):

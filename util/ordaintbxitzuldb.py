@@ -10,3 +10,9 @@ class OrdainTBXItzulDB(OrdainTBX):
 
     def getKarKatea(self):
         return self.ordain.findtext('term')
+
+    def setUsageNote(self,cs):
+        self.ordain.find('termNote[@type="usageNote"]').text = cs
+
+    def getUsageNote(self):
+        return self.ordain.findtext('termNote[@type="usageNote"]')

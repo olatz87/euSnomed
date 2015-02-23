@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from util.enumeratuak import Iturburua,CaseSignificance
 from util.tbx import TBX
 
@@ -28,8 +29,6 @@ class OrdainTBX(TBX):
     def setReliabilityCode(self,rl):
         self.ordain.find('descrip[@type="reliabilityCode"]').text = rl
             
-    def setUsageNote(self,cs):
-        self.ordain.find('termNote[@type="usageNote"]').text = cs
 
     def gehitu(self,elem,attVal,text):
         if type(elem) == str:

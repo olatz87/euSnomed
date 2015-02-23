@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+from lxml import etree as ET
 import unidecode
 
 class ItzulDBTBX:
@@ -37,13 +38,13 @@ class ItzulDBTBX:
             termEntry = ET.SubElement(body,'termEntry',id='p'+str(self.entryIdAlt))
             admin = ET.SubElement(termEntry,'admin',type='elementWorkingStatus').text = 'importedElement'
             langSetErd = ET.SubElement(termEntry,'langSet')
-            langSetErd.set('xml:lang',self.hizkuntza)
+            langSetErd.set('{http://www.w3.org/XML/1998/namespace}lang',self.hizkuntza)
             tigErd = ET.SubElement(langSetErd,'tig',id='t'+str(self.termIdAlt))
             termErd = ET.SubElement(tigErd,'term').text = erd
             sKeyEn = ET.SubElement(tigErd,'admin',type='sortKey').text = unidecode.unidecode(erd)
             self.termIdAlt += 1
             langSet = ET.SubElement(termEntry,'langSet')
-            langSet.set('xml:lang','eu')
+            langSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
             for eu,orda in hz.items():
                 eu = eu.decode('utf-8')
                 tig = ET.SubElement(langSet,'tig',id='t'+str(self.termIdAlt))
@@ -67,7 +68,7 @@ class ItzulDBTBX:
 
     def xmltanElkartu(self,hasha):
         erroa = ET.Element('martif',type='TBX')
-        erroa.set('xml:lang','eu')
+        erroa.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
         erroa.append(self.burukoaXMLItzulDB())
         text = ET.SubElement(erroa,'text')
         text.append(self.hash2tbx(hasha))
@@ -75,9 +76,13 @@ class ItzulDBTBX:
         tree = ET.ElementTree(erroa)
         tree.write(dok,encoding='utf-8',xml_declaration=True)
        
-    def kargatu(self):
-        dok = self.path+'/baliabideak/ItzulDB'+self.hizkuntza+'Has.xml'
-        tree = ET.parse(dok)
+    def kargatu(self,fitxategia=''):
+        if fitxategia:
+            dok = fitxategia
+        else:
+            dok = self.path+'/baliabideak/ItzulDB'+self.hizkuntza+'Has.xml'
+        parser = ET.XMLParser(encoding='utf-8')
+        tree = ET.parse(dok,parser)
         self.erroa = tree.getroot()
         self.entryIdAlt = len(self.erroa.findall('text/body/termEntry'))
         self.termIdAlt = len(self.erroa.findall('text/body/termEntry/langSet/tig'))
@@ -86,20 +91,20 @@ class ItzulDBTBX:
     def jaso(self,terminoa):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
         for termEntry in self.erroa.findall('text/body/termEntry'):
-            lag = termEntry.findtext('langSet[@xml:lang="'+self.hizkuntza+'"]/tig/term',namespaces=namespace)
+            lag = termEntry.findtext('langSet[{http://www.w3.org/XML/1998/namespace}lang="'+self.hizkuntza+'"]/tig/term',namespaces=namespace)
             if lag and lag.lower() == terminoa.lower():
-                return termEntry.findall('langSet[@xml:lang="eu"]/tig',namespaces=namespace)
+                return termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/tig',namespaces=namespace)
                 
     def gehituParea(self,term,ordList,entrySource,caseSig,pOS,tT,rC):
         termEntry = ET.SubElement(self.erroa.find('text/body'),'termEntry',id='p'+str(self.entryIdAlt))
         langSetErd = ET.SubElement(termEntry,'langSet')
-        langSetErd.set('xml:lang',self.hizkuntza)
+        langSetErd.set('{http://www.w3.org/XML/1998/namespace}lang',self.hizkuntza)
         tigErd = ET.SubElement(langSetErd,'tig',id='t'+str(self.termIdAlt))
         termErd = ET.SubElement(tigErd,'term').text = term
         sKeyEn = ET.SubElement(tigErd,'admin',type='sortKey').text = unidecode.unidecode(term)
         self.termIdAlt += 1
         langSet = ET.SubElement(termEntry,'langSet')
-        langSet.set('xml:lang','eu')
+        langSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
         for eu in ordList:
             if eu:
                 tig = ET.SubElement(langSet,'tig',id='t'+str(self.termIdAlt))
@@ -122,3 +127,51 @@ class ItzulDBTBX:
         dok = self.path+'/baliabideak/ItzulDB'+self.hizkuntza+'.xml'
         tree = ET.ElementTree(self.erroa)
         tree.write(dok,encoding='utf-8',xml_declaration=True)
+        print(dok,'fitxategia sortua')
+
+    def denakJaso(self):
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        denak = {}
+        for termEntry in self.erroa.findall('text/body/termEntry'):
+            kodea = termEntry.get('id')
+            jatTerm = termEntry.findtext('langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+self.hizkuntza+'"]/tig/term',namespaces=namespace)
+            if jatTerm:
+                jatTerm += '\t'+kodea
+                ordainak = termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/tig',namespaces=namespace)
+                for ordain in ordainak:
+                    lag = denak.get(jatTerm,[])
+                    ordT = ordain.findtext('term')
+                    if jatTerm[-1] != '.' and ordT and ordT[-1] == '.':
+                        ordT = ordT[:-1]
+                    lag.append(ordT)
+                    denak[jatTerm] = lag
+        return denak
+    
+    def terminoaJaso(self,terminoa,hizkuntza):
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        irtLag = []
+        for tig in self.erroa.findall('text/body/termEntry/langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+hizkuntza+'"]/tig'):
+            lag = tig.findtext('term')
+            if lag and lag.lower() == terminoa.lower():
+                if hizkuntza == self.hizkuntza: 
+                    return tig
+                # else:
+                #     irtLag.append(tig)
+
+    def pareaJaso(self,terminoa):
+        #emandako terminoari dagokion termEntry osoa itzultzen du (ordain guztiak hizkuntza guztietan)
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        for termEntry in self.erroa.findall('text/body/termEntry'):
+            lag = termEntry.findtext('langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+self.hizkuntza+'"]/tig/term',namespaces=namespace)
+            if lag and lag.lower() == terminoa.lower():
+                return termEntry
+    
+        
+    def toHash(self):
+        denak = {}
+        for termEntry in self.erroa.findall('text/body/termEntry'):
+            jatTerm = termEntry.findtext('langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+self.hizkuntza+'"]/tig/term')
+            if jatTerm:
+                ordainak = termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/tig')
+                denak[jatTerm] = ordainak
+        return denak

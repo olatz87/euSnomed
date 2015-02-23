@@ -24,16 +24,19 @@ def main(argv):
         sys.exit(2)
     path = os.path.dirname(os.path.realpath(__file__))+'/'
     term = term.strip()
+    larria = False
+    if term[0].isupper():
+        larria = True
     p = subprocess.Popen(['flookup -i -x -b '+path+'idenBateratuaOsatua.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
     returnword = p.communicate(input=term.encode('utf8'))
     idenOnak = []
-    trans = returnword[0].decode('utf8')
+    trans = returnword[0].decode('utf8').strip()
     if trans == '+?':
-        return "Ezin izan da "+term+" zatietan banatu."
+        return "+?"
     else:
         hashZ = {}
         minLength = 1000
-        identifikatuak = trans.split('\n')
+        identifikatuak = trans.strip().split('\n')
         if "#+" in identifikatuak[0]:
             for itzul in identifikatuak:
                 zat = itzul.split('+')
@@ -41,31 +44,34 @@ def main(argv):
                 for z in zat:
                     if '#' in z:
                         count += len(z)-1
-                        if count <=minLength:
-                            hashZ[itzul]=count
-                            minLength = count
-                for key,value in hashZ.items():
-                    if value <= minLength:
-                        idenOnak.append(key)
+                if count <=minLength:
+                    hashZ[itzul]=count
+                    minLength = count
+            for key,value in hashZ.items():
+                if value <= minLength:
+                    idenOnak.append(key)
         else:
             for itzul in identifikatuak:
                 zat = itzul.split('+')
                 count = len(zat)
-                if count < minLength:
+                if count <= minLength:
                     hashZ[itzul]=count
+                    minLength = count
             for key,value in hashZ.items():
                 if value <= minLength:
                     idenOnak.append(key)
     if '' in idenOnak:
         idenOnak.remove('')
-#    print(idenOnak)
     lag = set()
     idatz = ''
-   
     for s in idenOnak:
         p1 = subprocess.Popen(['flookup -i -x -b '+path+'itzultzaileaOsatua.fst'],stdin=PIPE,stdout=PIPE,shell=True)
         returnwords = p1.communicate(input=s.encode('utf8'))
         for itzul in returnwords[0].decode('utf8').split('\n'):
+            if not itzul:
+                continue
+            if larria:
+                itzul = itzul[0].upper()+itzul[1:]
             if itzul not in lag:
                 lag.add(itzul)
                 if idatz == '':

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from util.enumeratuak import CaseSignificance
 
 class TBX:
@@ -14,7 +15,4 @@ class TBX:
 
     def getNormalizatua(self):
         return self.term.findtext('admin[@type="sortKey"]')
-
-    def getUsageNote(self):
-        return self.term.findtext('termNote[@type="usageNote"]')
 

@@ -79,7 +79,8 @@ Iturburua = {
     'Sexologia' : ('009',8),
     'Morfologia' : ('101',0),
     'Sintaxia' : ('102',0),
-    'Matxin' : ('200',0)}
+    'Matxin' : ('200',0),
+    'Medikuak' : ('300',0)}
 
 CaseSignificance = {
     'Sensitive' : "900000000000017005",

@@ -8,5 +8,13 @@ class OrdainTBXSnomed(OrdainTBX):
         super().__init__(ntig)
   
     def getKarKatea(self):
-        return self.ordain.findtext('termGrp/term')
+        if self.getUsageNote() != "Sensitive":
+            return self.ordain.findtext('termGrp/term').lower()
+        else:
+            return self.ordain.findtext('termGrp/term')
     
+    def setUsageNote(self,cs):
+        self.ordain.find('termGrp/termNote[@type="usageNote"]').text = cs
+
+    def getUsageNote(self):
+        return self.ordain.findtext('termGrp/termNote[@type="usageNote"]')

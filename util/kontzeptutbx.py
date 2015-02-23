@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+from lxml import etree as ET
 import unidecode
 from util.ordaintbxitzuldb import OrdainTBXItzulDB
 from util.ordaintbxsnomed import OrdainTBXSnomed
+from util.terminotbxsnomed import TerminoTBXSnomed
 from util.enumeratuak import Iturburua
 
 class KontzeptuTBX:
@@ -33,7 +35,7 @@ class KontzeptuTBX:
     def eguneratuGNS(self,term, gnsID):
         term = term.strip()
         euLanSet = ET.SubElement(self.kontzeptu, 'langSet')
-        euLanSet.set('xml:lang','eu')
+        euLanSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
         euId = KontzeptuTBX.sortuId()
         ntig = ET.SubElement(euLanSet,'ntig',id='eu'+euId)
         tG = ET.SubElement(ntig,'termGrp')
@@ -43,25 +45,25 @@ class KontzeptuTBX:
         eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua['MapGNS'][0]
         cO = ET.SubElement(ntig,'admin',type='conceptOrigin').text = 'gns'+gnsID
         rC = ET.SubElement(ntig,'descrip',type='reliabilityCode').text = '5'
-        termNote = ET.SubElement(ntig,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
-        uN = ET.SubElement(ntig,'termnote',type='usageNote').text = 'Unknown'
+        termNote = ET.SubElement(tG,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
+        uN = ET.SubElement(tG,'termNote',type='usageNote').text = 'Unknown'
         #Transaction informazioa hemen joango litzateke...
         
     def getTerminoak(self,hizkuntza):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
-        return self.kontzeptu.findall('langSet[@xml:lang="'+hizkuntza+'"]/ntig',namespaces=namespace)
+        return self.kontzeptu.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+hizkuntza+'"]/ntig',namespaces=namespace)
 
     def getKontzeptuId(self):
         return self.kontzeptu.get('id')
 
-    def eguneratu(self,ordList,elNtig,ema):
+    def eguneratu(self,ordList,elNtig,ema,zb):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
-        euLanSet = self.kontzeptu.find('langSet[@xml:lang="eu"]',namespaces=namespace)
+        euLanSet = self.kontzeptu.find('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]',namespaces=namespace)
         if euLanSet:
             b = True
         else:
             euLanSet = ET.SubElement(self.kontzeptu,'langSet')
-            euLanSet.set('xml:lang','eu')
+            euLanSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
             b = False
         zahList = {} #key = term.text, value = ntig
         for euntig in euLanSet.findall('ntig'):
@@ -70,10 +72,16 @@ class KontzeptuTBX:
         hizPar = [False,False,False,False,False,False,False,False,False,False]
         mor = False
         erdId = elNtig.get('id')
+        terminoTBX = TerminoTBXSnomed(elNtig)
+        erdTerm = terminoTBX.getTerminoa()
+        zerrendaBeltza = zb.get(erdTerm.lower(),[])
         hizkuntza = erdId[:2]
         for elTig in ordList:
             ordainI = OrdainTBXItzulDB(elTig)
             itList = ordainI.getIturburua()
+            elTerm = elTig.findtext('term')
+            if elTerm.lower() in zerrendaBeltza:
+                continue
             for it in itList:
                 if it != 'Morfologia':
                     ema.gehiHiztegia(it,'ordain',hizkuntza)
@@ -83,12 +91,12 @@ class KontzeptuTBX:
             if 'Morfologia' in itList:
                 ema.gehiAlgoritmoa('morfo','ordain')
                 mor = True
-            elTerm = elTig.findtext('term')
+
             if b and elTerm in zahList:
                 ordainS = OrdainTBXSnomed(zahList[elTerm])
                 stList = ordainS.getIturburua()
                 for it in itList:
-                    if it not in stList:
+                    if Iturburua[it][0] not in stList:
                         ordainS.gehitu('admin','entrySource',Iturburua[it][0])
                 cOList = ordainS.getConceptOrigin()
                 if erdId not in cOList:
@@ -98,6 +106,8 @@ class KontzeptuTBX:
                     ordainS.setReliabilityCode(rl)
                 cS = ordainI.getUsageNote()
                 if cS == 'Sensitive' or ordainS.getUsageNote() == 'Unknown':
+                    #print(ordainS.getKarKatea())
+                    #print(ET.tounicode(zahList[elTerm],pretty_print=True))
                     ordainS.setUsageNote(cS)
             else:
                 ntig = ET.SubElement(euLanSet,'ntig',id='eu'+KontzeptuTBX.sortuId())
@@ -109,8 +119,8 @@ class KontzeptuTBX:
                     eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua[it][0]
                 cO = ET.SubElement(ntig,'admin',type='conceptOrigin').text = erdId
                 rC = ET.SubElement(ntig,'descrip',type='reliabilityCode').text = ordainI.getReliabilityCode()
-                termNote = ET.SubElement(ntig,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
-                uN = ET.SubElement(ntig,'termnote',type='usageNote').text = ordainI.getUsageNote()
+                termNote = ET.SubElement(tG,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
+                uN = ET.SubElement(tG,'termNote',type='usageNote').text = ordainI.getUsageNote()
         for i in range(-1,len(hizPar)-1):
             if hizPar[i+1]:
                 ema.gehiHiztegia(i+1,'pare',hizkuntza)
@@ -161,7 +171,7 @@ class KontzeptuTBX:
 
     def garbituTBX(self):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
-        lanSet = self.kontzeptu.findall('langSet[@xml:lang="eu"]',namespaces=namespace)
+        lanSet = self.kontzeptu.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]',namespaces=namespace)
         if len(lanSet) > 1:
             lan1 = lanSet[0]
             lan2 = lanSet[1]
@@ -197,3 +207,35 @@ class KontzeptuTBX:
             return 1
         else:
             return 0
+
+
+    def termNoteKonpondu(self):
+        for ntig in self.kontzeptu.findall('langSet/ntig'):
+            termG = ntig.find('termGrp')
+            for termN in ntig.findall('termNote'):
+                termG.append(termN)
+                ntig.remove(termN)
+
+    def adminAnitzak(self):
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        for ntig in self.kontzeptu.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/ntig',namespaces=namespace):
+            esList = ntig.findall('admin[@type="entrySource"]')
+            coList = ntig.findall('admin[@type="conceptOrigin"]')
+            if len(esList) > 1:
+                lag = ''
+                for es in esList:
+                    if lag:
+                        lag += '-' + es.text
+                    else:
+                        lag = es.text
+                    ntig.remove(es)
+                esLag = ET.SubElement(ntig,'admin',type='entrySource').text=lag
+            if len(coList) > 1:
+                lag = ''
+                for co in coList:
+                    if lag:
+                        lag += '-' + co.text
+                    else:
+                        lag = co.text
+                    ntig.remove(co)
+                coLag = ET.SubElement(ntig,'admin',type='conceptOrigin').text=lag
