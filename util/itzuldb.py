@@ -457,7 +457,7 @@ class ItzulDB:
                 line = line.strip()
                 lineLag = line.split('\t')
                 eng = lineLag[0]
-                eusakLag = lineLag[2]
+                eusakLag = lineLag[1]
                 eusak = []
                 if '"' in eusakLag:
                     eusak = eusakLag[1:-1].split('","')
@@ -474,7 +474,7 @@ class ItzulDB:
                 line = line.strip()
                 lineLag = line.split('\t')
                 eng = lineLag[0]
-                eusakLag = lineLag[2]
+                eusakLag = lineLag[1]
                 eusak = []
                 if '"' in eusakLag:
                     eusak = eusakLag[1:-1].split('","')
@@ -489,16 +489,16 @@ class ItzulDB:
         with codecs.open(path+'baliabideak/felixenBestePareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
                 line = line.strip()
-                lineLag = line.replace('_',' ').split('\t')
+                lineLag = re.sub('\t+','\t',line.replace('_',' ')).split('\t')
                 eng = lineLag[0]
-                eusak = lineLag[2].split(',')
+                eusak = lineLag[1].split(',')
                 for eus in eusak:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
                     pos = ['Izen']
                     if len(lineLag) > 2:
-                        pos = [lineLag[3]]
+                        pos = [lineLag[2]]
                     self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,zbEng)
         
         with codecs.open(path+'baliabideak/karlosenBestePareak.txt',encoding='utf-8') as fitx:
@@ -506,12 +506,15 @@ class ItzulDB:
                 line = line.strip()
                 lineLag = re.sub('\t+','\t',line.replace('_',' ')).split('\t')
                 eng = lineLag[0]
-                eusak = lineLag[2].split(',')
+                eusak = lineLag[1].split(',')
                 for eus in eusak:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    self.hashSet(engH,eng,eus,'Medikuak',cS,['Izen'],'',8,zbEng)
+                    pos = ['Izen']
+                    if len(lineLag) > 2:
+                        pos = [lineLag[2]]
+                    self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,zbEng)
 
     def hasieratu(self,path,hizkuntza):
 
@@ -540,6 +543,8 @@ class ItzulDB:
         if hizkuntza == 2 or hizkuntza == 0:
             self.morfo2Hash(path,engH,zbEng)
             print('+Morfosemantika',len(engH),len(spaH))
+            self.medikuak2Hash(path,engH,zbEng)
+            print('+Medikuak',len(engH),len(spaH))
         self.elhuyar2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
         print('+Elhuyar',len(engH),len(spaH))
         return engH,spaH

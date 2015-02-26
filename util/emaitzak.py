@@ -20,7 +20,8 @@ class Emaitzak:
                           [0,0,0,0],#euskalterm[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
                           [0,0,0,0],#administrazioa[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
                           [0,0,0,0],#sexologia[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
-                          [0,0,0,0]]#drogak[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
+                          [0,0,0,0],#drogak[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
+                          [0,0,0,0]]#medikuak
         self.tokenak = [[0,0,0,0],#bat[ingDen,ingBai,gazDen,gazBai]
                         [0,0,0,0],#bi[ingDen,ingBai,gazDen,gazBai]
                         [0,0,0,0],#hiru[ingDen,ingBai,gazDen,gazBai]
@@ -45,6 +46,9 @@ class Emaitzak:
         elh = "\nElhuyar\t\tTer: "+str(self.hiztegiak[4][1])+"\tOrd: "+str(self.hiztegiak[4][0])+"\t||\tTer: "+str(self.hiztegiak[4][3])+"\tOrd: "+str(self.hiztegiak[4][2])
         gns = "\nGNS10\t\tTer: "+str(self.hiztegiak[3][1])+"\tOrd: "+str(self.hiztegiak[3][0])+"\t||\tTer: "+str(self.hiztegiak[3][3])+"\tOrd: "+str(self.hiztegiak[3][2])
         adm = "\nAdminSan\tTer: "+str(self.hiztegiak[6][1])+"\tOrd: "+str(self.hiztegiak[6][0])+"\t||\tTer: "+str(self.hiztegiak[6][3])+"\tOrd: "+str(self.hiztegiak[6][2])
+        sex = "\nSexologia\tTer: "+str(self.hiztegiak[7][1])+"\tOrd: "+str(self.hiztegiak[7][0])+"\t||\tTer: "+str(self.hiztegiak[7][3])+"\tOrd: "+str(self.hiztegiak[7][2])
+        dro = "\nDrogak\tTer: "+str(self.hiztegiak[8][1])+"\tOrd: "+str(self.hiztegiak[8][0])+"\t||\tTer: "+str(self.hiztegiak[8][3])+"\tOrd: "+str(self.hiztegiak[8][2])
+        med = "\nMedikuak\tTer: "+str(self.hiztegiak[9][1])+"\tOrd: "+str(self.hiztegiak[9][0])+"\t||\tTer: "+str(self.hiztegiak[9][3])+"\tOrd: "+str(self.hiztegiak[9][2])
 
         portzentaiak = "\n\n\t\tPortzentaiak"
         bat = "\nHitz bakarrekoak\tIngelesez "+str(((self.tokenak[0][1]/self.tokenak[0][0])*100))+" ("+str(self.tokenak[0][1])+"/"+str(self.tokenak[0][0])+")\t||\tGaztelaniaz "+str(((self.tokenak[0][3]/self.tokenak[0][2])*100))+" ("+str(self.tokenak[0][3])+"/"+str(self.tokenak[0][2])+")"
@@ -60,7 +64,7 @@ class Emaitzak:
         ordI = "\nDENERA LORTUTAKO ORDAINAK\t"+str(self.ordainakItzuliak)
         print(str(self.algoritmoa))
         print(str(self.tokenak))
-        return burukoa+hiztegi+morfo+zt+anatomia+erizaintza+gns+et+elh+mapG+portzentaiak+bat+bi+hiru+lau+gehi+denK+denT+ordI+"\n\n\n"
+        return burukoa+hiztegi+morfo+zt+anatomia+erizaintza+gns+et+elh+adm+sex+dro+med+mapG+portzentaiak+bat+bi+hiru+lau+gehi+denK+denT+ordI+"\n\n\n"
 
     def getTerminoak(self,hizkuntza,mota):
         if mota == 'bai':
