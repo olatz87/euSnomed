@@ -18,3 +18,6 @@ class OrdainTBXSnomed(OrdainTBX):
 
     def getUsageNote(self):
         return self.ordain.findtext('termGrp/termNote[@type="usageNote"]')
+
+    def getPOS(self):
+        return self.ordain.findall('termGrp/termNote[@type="partOfSpeech"]')

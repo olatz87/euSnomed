@@ -35,3 +35,4 @@ class OrdainTBX(TBX):
             ET.SubElement(self.ordain,elem,type=attVal).text = text
         elif type(elem) == ET.Element:
             self.ordain.append(elem)
+

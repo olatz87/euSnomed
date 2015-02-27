@@ -40,6 +40,7 @@ class KontzeptuTBX:
         ntig = ET.SubElement(euLanSet,'ntig',id='eu'+euId)
         tG = ET.SubElement(ntig,'termGrp')
         termEl = ET.SubElement(tG,'term').text = term
+        pos = ET.SubElement(tG,'termNote',type='partOfSpeech').text = 'Izen'
         sK = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(term)
         #ews = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'workingElement'
         eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua['MapGNS'][0]
@@ -94,6 +95,12 @@ class KontzeptuTBX:
 
             if b and elTerm in zahList:
                 ordainS = OrdainTBXSnomed(zahList[elTerm])
+                posL = set()
+                for pos in ordainS.getPOS():
+                    posL.add(pos.text)
+                for pos in ordainI.getPOS():
+                    if pos.text not in posL:
+                        ordainS.gehitu(pos,'','')
                 stList = ordainS.getIturburua()
                 for it in itList:
                     if Iturburua[it][0] not in stList:
@@ -114,6 +121,8 @@ class KontzeptuTBX:
                 tG = ET.SubElement(ntig,'termGrp')
                 termEl = ET.SubElement(tG,'term').text = elTerm
                 sK = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(elTerm)
+                for pos in ordainI.getPOS():
+                    tG.append(pos)
                 #ews = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'workingElement'
                 for it in itList:
                     eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua[it][0]

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+from lxml import etree as ET
 from util.ordaintbx import OrdainTBX
 
 class OrdainTBXItzulDB(OrdainTBX):
@@ -16,3 +17,6 @@ class OrdainTBXItzulDB(OrdainTBX):
 
     def getUsageNote(self):
         return self.ordain.findtext('termNote[@type="usageNote"]')
+
+    def getPOS(self):
+        return self.ordain.findall('termNote[@type="partOfSpeech"]')
