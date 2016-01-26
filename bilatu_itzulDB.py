@@ -25,7 +25,7 @@ def main(argv):
             terminoa = arg
         elif opt in ("-l","--hizkuntza"):
             hizkuntza = int(arg)
-    itzulDB = ItzulDB(path,hizkuntza)#en
+    itzulDB = ItzulDB(path,hizkuntza,False,"/sc01a4/users/operezdevina001/BACKUP/Doktoretza/euSnomed/baliabideak/ItzulDBen.xml")#en
     irteera = itzulDB.pareaJaso(terminoa)
     if irteera is None:
         print("Ez da terminoa aurkitu")

@@ -7,6 +7,7 @@ from util.snomed import Snomed
 def main(argv):
     path = '../../euSnomed/'
     hizkuntza = 0 #en
+    hie = 'denak'
     try:
         opts, args = getopt.getopt(argv,"hp:t:i:",["path=","terminoa=","hierarkia="])
     except getopt.GetoptError:
@@ -24,14 +25,19 @@ def main(argv):
             hie = arg
     snomed = Snomed(False,path)
     irteera = 0
-    for hie in Hierarkia:
+    if hie == 'denak':
+        HierarkiaLag = Hierarkia
+    else:
+        HierarkiaLag = [hie]
+    for hie in HierarkiaLag:
+        print(hie)
         i = 1
         cli = ['','']
         if hie == 'CLINICAL':
             i = 2
             cli = ['_FIN','_DIS']
         for j in range(0,i):
-            snomed.kargatu(hie,cli[j]+'_ald')
+            snomed.kargatu(hie.upper(),cli[j]+'_ald')
             irteera += snomed.getMorfologiakBakarrik()
     print(irteera)
 if __name__ == "__main__":

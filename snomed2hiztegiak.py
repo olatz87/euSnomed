@@ -12,6 +12,8 @@ def main(argv):
     hizkuntza = "en"
     hiztegi = '/hiztegiak/'
     sin = False
+    denak = '../../SintaxiMaila/terminoak/'
+    zbD = "../../euSnomed/zerrendaBeltzak/"
     #out = path+'/itzuliGabeak/'+hie+'-hitzBakarrekoak.txt'
     try:
         opts, args = getopt.getopt(argv,"hp:l:s",["path=","hizkuntza=","sinonimoak="])
@@ -37,17 +39,38 @@ def main(argv):
     for hie in Hierarkia:
         i = 1
         cli = ['_ald','_ald']
+        zbCli = ['','']
         if hie == 'CLINICAL':
             i = 2
             cli = ['_FIN_ald','_DIS_ald']
+            zbCli = ["_fin","_dis"]
         for j in range(0,i):
+            print(hie+cli[j])
+            zb = {}
+            if os.path.isfile(zbD+hie.lower()+zbCli[j].lower()+'-ZBen.txt'):
+                with codecs.open(zbD+hie.lower()+zbCli[j].lower()+'-ZBen.txt',encoding='utf-8') as fitx:
+                    print(hie,"zerrenda beltza kargatuta")
+                    for line in fitx:
+                        lagLine = line.strip().split('\t')
+                        for ll in lagLine[1:]:
+                            ll = ll.strip()
+                            if ll:
+                                lista = zb.get(lagLine[0],[])
+                                lista.append(ll)
+                                zb[lagLine[0]] = lista
+            else:
+                print(zbD+hie.lower()+zbCli[j].lower()+'-ZBen.txt')
             snomed.kargatu(hie.upper(),cli[j])
             out2 = path+hiztegi+hie.lower()+cli[j].lower().replace('_ald','')+'-hiztegiElebiduna.txt'
             out1 = path+hiztegi+hie.lower()+cli[j].lower().replace('_ald','')+'-hiztegiElebakarra.txt'
+            out = denak+hie.upper()+cli[j].upper().replace('_ALD','')+'_DENAK.txt'
             itzGab = snomed.getItzuliGabeak(hizkuntza)
             irteera = []
             for ter in itzGab:
-                irteera.append(ter.getTerminoa())
+                lag = ter.getTerminoa()
+                if ter.getUsageNote() != "Sensitive":
+                    lag = lag[0].lower()+lag[1:]
+                irteera.append(lag)
             with codecs.open(out1,'w',encoding='utf-8') as fout:
                 fout.write('\n'.join(irteera))
             if sin:
@@ -56,7 +79,15 @@ def main(argv):
                 itzuliak = snomed.getItzuliak(hizkuntza)
             with codecs.open(out2,'w',encoding='utf-8') as fout:
                 for term,ordainak in itzuliak.items():
+                    if term in zb:
+                        for ordL in zb[term]:
+                            if ordL in ordainak:
+                                ordainak.remove(ordL)
                     fout.write(term+': '+';'.join(ordainak)+'\n')
+            with codecs.open(out,'w',encoding='utf-8') as fout:
+                fout.write('\n'.join(irteera))
+                lag = list(itzuliak.keys())
+                fout.write('\n'.join(lag))
             print(hie+cli[j]+' eginda!')
 
 if __name__ == "__main__":
