@@ -92,7 +92,7 @@ def itzuli(snomed,itzulDBeng,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,lo
     #     print(ET.tounicode(ordL,pretty_print=True))
     i = len(kode_es)
     for el in kode_en:#konTBX.getTerminoak('en'):
-
+        #print(el)
         itzulia = False
         terminoS = snomed.getTerminoa(el)#TerminoTBXSnomed(el)
         konTBX = KontzeptuTBX(terminoS.getKontzeptua())
@@ -108,8 +108,9 @@ def itzuli(snomed,itzulDBeng,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,lo
         ema.gehiToken(termL,'denera','en')
         #Lehenengo urratsa
         ordList = engHash.get(term.lower(),None)
-        #print(el)
+        # print(el)
         if ordList:
+            #print(termL,ordList)
             ema.gehiToken(termL,'itzulia','en')
             konTBX.eguneratu(ordList,terminoS.term,ema,zb)
             ema.setTerminoa(term,'en','bai')
@@ -173,7 +174,7 @@ def itzuli(snomed,itzulDBeng,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,lo
                 #print(itzulpenak,len(itzulpenak))
                 if len(itzulpenak) >= 1:
                     lock.acquire()
-                    ordList = itzulDBeng.gehitu(itzulpenak,term,"Patroiak",terminoS.getUsageNote(),"TerminoKonplexu","",6,apl_patroiak)
+                    ordList = itzulDBeng.gehitu(itzulpenak,term,"Patroiak",terminoS.getUsageNote(),set(["TerminoKonplexu"]),"",6,apl_patroiak)
                     lock.release()
                     engHash[term] = ordList
                     konTBX.eguneratu(ordList,terminoS.term,ema,zb)
@@ -351,10 +352,12 @@ def main(argv):
     proba = False
     emaDen = Emaitzak("DENAK","")
     emaitzak = {}
-    i_min = 1
+    i_min = 6
     i_max = 52
     #i_max = 4
     pat_app = {}
+    pool = ThreadPool(processes=6)
+    lock = Lock()
     for tok_kop in range(i_min,i_max): #Kontuz!!! i_min inkrementatu dut!!!
         print("Itzulpena hasiko da: "+str(tok_kop)+" tokenetarako")  
         #pool = mp.Pool(processes=4)
@@ -363,8 +366,6 @@ def main(argv):
         #print("Proba ondo joan da")
         #results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,snomed,itzulDBeng,itzulDBspa,itzulEnHash,itzulSpHash,emFitx,emaitzak,)) for hie in Hierarkia_RF2]
         #output = [p.get() for p in results]
-        pool = ThreadPool(processes=6)
-        lock = Lock()
         #pool = Pool(processes=6,initializer=init,initargs=(1,))
         adj_hiz = {}
         kat_hiz = {}

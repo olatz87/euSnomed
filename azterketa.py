@@ -71,6 +71,7 @@ def deskribapenakAztertu():
             sys.stdout.flush()
 
     print(lagSet)
+
 def main(argv):
     deskribapenakAztertu()
 

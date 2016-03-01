@@ -4,6 +4,8 @@
 from lxml import etree as ET
 from util.enumeratuak import Iturburua,CaseSignificance
 from util.tbx import TBX
+from copy import deepcopy
+
 
 class OrdainTBX(TBX):
 
@@ -14,7 +16,7 @@ class OrdainTBX(TBX):
     def getIturburua(self):
         itak = []
         for e in self.ordain.findall('admin[@type="entrySource"]'):
-            itak.append(e.text)
+            itak.append(deepcopy(e.text))
         return itak
 
     def getReliabilityCode(self):
@@ -23,7 +25,7 @@ class OrdainTBX(TBX):
     def getConceptOrigin(self):
         coak = []
         for e in self.ordain.findall('admin[@type="conceptOrigin"]'):
-            coak.append(e.text)
+            coak.append(deepcopy(e.text))
         return coak
 
     def setReliabilityCode(self,rl):
@@ -34,5 +36,10 @@ class OrdainTBX(TBX):
         if type(elem) == str:
             ET.SubElement(self.ordain,elem,type=attVal).text = text
         elif type(elem) == ET.Element:
-            self.ordain.append(elem)
+            self.ordain.append(deepcopy(elem))
 
+    def getPatroia(self):
+        patak = []
+        for e in self.ordain.findall('admin[@type="originatingDatabase"]'):
+            patak.append(deepcopy(e.text))
+        return patak

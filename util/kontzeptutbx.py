@@ -7,6 +7,7 @@ from util.ordaintbxitzuldb import OrdainTBXItzulDB
 from util.ordaintbxsnomed import OrdainTBXSnomed
 from util.terminotbxsnomed import TerminoTBXSnomed
 from util.enumeratuak import Iturburua
+from copy import deepcopy
 
 class KontzeptuTBX:
     
@@ -18,6 +19,9 @@ class KontzeptuTBX:
 
     def setKontzeptu(self,kontzep):
         self.kontzeptu = kontzep
+        
+    def getFSN(self):
+        return self.kontzeptu.findtext('descrip[@type="definition"]')
 
     def getPreferredTerm(self,hizkuntza):
         for terminoa in self.getTerminoak(hizkuntza):
@@ -40,7 +44,10 @@ class KontzeptuTBX:
         ntig = ET.SubElement(euLanSet,'ntig',id='eu'+euId)
         tG = ET.SubElement(ntig,'termGrp')
         termEl = ET.SubElement(tG,'term').text = term
-        pos = ET.SubElement(tG,'termNote',type='partOfSpeech').text = 'Izen'
+        pT = 'Izen'
+        if " " in term:
+            pT = 'Termino konplexu'
+        pos = ET.SubElement(tG,'termNote',type='partOfSpeech').text = pT
         sK = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(term)
         #ews = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'workingElement'
         eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua['MapGNS'][0]
@@ -60,7 +67,7 @@ class KontzeptuTBX:
     def eguneratu(self,ordList,elNtig,ema,zb):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
         euLanSet = self.kontzeptu.find('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]',namespaces=namespace)
-        if euLanSet:
+        if euLanSet is not None:
             b = True
         else:
             euLanSet = ET.SubElement(self.kontzeptu,'langSet')
@@ -81,6 +88,7 @@ class KontzeptuTBX:
             ordainI = OrdainTBXItzulDB(elTig)
             itList = ordainI.getIturburua()
             elTerm = elTig.findtext('term')
+            orPat = elTig.findtext("admin[@type='originatingDatabase']")
             if elTerm.lower() in zerrendaBeltza:
                 continue
             for it in itList:
@@ -99,6 +107,7 @@ class KontzeptuTBX:
                 for pos in ordainS.getPOS():
                     posL.add(pos.text)
                 for pos in ordainI.getPOS():
+
                     if pos.text not in posL:
                         ordainS.gehitu(pos,'','')
                 stList = ordainS.getIturburua()
@@ -121,8 +130,11 @@ class KontzeptuTBX:
                 tG = ET.SubElement(ntig,'termGrp')
                 termEl = ET.SubElement(tG,'term').text = elTerm
                 sK = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(elTerm)
-                for pos in ordainI.getPOS():
-                    tG.append(pos)
+                if " " in elTerm:
+                    ET.SubElement(ntig,'termNote',type='partOfSpeech').text = 'Termino konplexu'
+                else:
+                    for pos in ordainI.getPOS():
+                        tG.append(deepcopy(pos))
                 #ews = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'workingElement'
                 for it in itList:
                     eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua[it][0]
@@ -130,6 +142,9 @@ class KontzeptuTBX:
                 rC = ET.SubElement(ntig,'descrip',type='reliabilityCode').text = ordainI.getReliabilityCode()
                 termNote = ET.SubElement(tG,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
                 uN = ET.SubElement(tG,'termNote',type='usageNote').text = ordainI.getUsageNote()
+                if orPat:
+                    for orP in orPat:
+                        orDa = ET.SubElement(ntig,"admin",type="originatingDatabase").text = orP
         for i in range(-1,len(hizPar)-1):
             if hizPar[i+1]:
                 ema.gehiHiztegia(i+1,'pare',hizkuntza)
@@ -211,7 +226,7 @@ class KontzeptuTBX:
                     if cS == 'Sensitive' or ordainS.getUsageNote() == 'Unknown':
                         ordainS.setUsageNote(cS)
                 else:
-                    lan1.append(euntig)
+                    lan1.append(deepcopy(euntig))
                     
             return 1
         else:
@@ -223,7 +238,7 @@ class KontzeptuTBX:
             termG = ntig.find('termGrp')
             for termN in ntig.findall('termNote'):
                 termG.append(termN)
-                ntig.remove(termN)
+                #ntig.remove(termN) append-ekin gurasoa aldatu diozu
 
     def adminAnitzak(self):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}

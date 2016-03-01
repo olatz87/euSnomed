@@ -21,3 +21,6 @@ class TerminoTBXSnomed(TerminoTBX):
 
     def setCaseSignificance(self,caseSig):
         self.term.find('termGrp/termNote[@type="usageNote"]').text = caseSig
+
+    def getKontzeptua(self):
+        return self.term.getparent().getparent()

@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-from util.enumeratuak import Iturburua
+from util.enumeratuak import Iturburua, Patroiak
+
 class Emaitzak:
 
-    def __init__(self,hie,cli):
+    def __init__(self,hie,cli=""):
         self.hierarkia = hie
         self.cli = cli
         
@@ -32,6 +33,50 @@ class Emaitzak:
         self.kontzeptuakItzuliak = 0
         self.ordainakItzuliak = 0
         self.terminoakItzuliak = 0
+        self.tk_patroiak = {}
+        for pat in Patroiak:
+            self.tk_patroiak[pat] = 0
+
+    def getAlgoritmoa(self):
+        return self.algoritmoa
+
+    def getHiztegiak(self):
+        return self.hiztegiak
+
+    def getTokenak(self):
+        return self.tokenak
+
+    def getKontzeptuakItzuliak(self):
+        return self.kontzeptuakItzuliak
+        
+    def getOrdainakItzuliak(self):
+        return self.ordainakItzuliak
+        
+    def getTerminoakItzuliak(self):
+        return self.terminoakItzuliak
+
+    def batuEmaitzak(self,ema):
+        self.kontzeptuakItzuliak += ema.getKontzeptuakItzuliak()
+        self.ordainakItzuliak += ema.getOrdainakItzuliak()
+        self.terminoakItzuliak += ema.getTerminoakItzuliak()
+        self.algoritmoa = [ list(map(sum, zip(*t))) for t in zip(ema.getAlgoritmoa(),self.algoritmoa)]
+        self.hiztegiak = [ list(map(sum, zip(*t))) for t in zip(ema.getHiztegiak(),self.hiztegiak)]
+        self.tokenak = [ list(map(sum, zip(*t))) for t in zip(ema.getTokenak(),self.tokenak)]
+    
+    def batuEmaitzakList(self,emaL):
+        for hi,ema in emaL.items():
+            self.batuEmaitzak(ema)
+        # self.kontzeptuakItzuliak = sum(ema.getKontzeptuakItzuliak() for ema in emaL.values())
+        # self.ordainakItzuliak = sum(ema.getOrdainakItzuliak() for ema in emaL.values())
+        # self.terminoakItzuliak = sum(ema.getTerminoakItzuliak() for ema in emaL.values())
+        # emaZipAl = zip(ema.getAlgoritmoa() for ema in emaL.values())
+        # print(list(emaZipAl))
+        # emaZipHi = zip(ema.getHiztegiak() for ema in emaL.values())
+        # emaZipTo = zip(ema.getTokenak() for ema in emaL.values())
+        # self.algoritmoa = [ sum(item) for item in emaZipAl ]
+        # self.hiztegiak = [ sum(item) for item in emaZipHi ]
+        # self.tokenak = [ sum(item) for item in emaZipTo ]
+
 
     def idatzi(self):
         burukoa = self.hierarkia+self.cli#+"\tIngelesez "+denera[0]+"\t||\tGaztelaniaz "+denera[1]+"\n\t\tIngelesez\t\tGaztelaniaz"
@@ -51,12 +96,14 @@ class Emaitzak:
         med = "\nMedikuak\tTer: "+str(self.hiztegiak[9][1])+"\tOrd: "+str(self.hiztegiak[9][0])+"\t||\tTer: "+str(self.hiztegiak[9][3])+"\tOrd: "+str(self.hiztegiak[9][2])
 
         portzentaiak = "\n\n\t\tPortzentaiak"
-        bat = "\nHitz bakarrekoak\tIngelesez "+str(((self.tokenak[0][1]/self.tokenak[0][0])*100))+" ("+str(self.tokenak[0][1])+"/"+str(self.tokenak[0][0])+")\t||\tGaztelaniaz "+str(((self.tokenak[0][3]/self.tokenak[0][2])*100))+" ("+str(self.tokenak[0][3])+"/"+str(self.tokenak[0][2])+")"
-        bi = "\nBi hitzetakoak\t\tIngelesez "+str((self.tokenak[1][1]/self.tokenak[1][0])*100)+" ("+str(self.tokenak[1][1])+"/"+str(self.tokenak[1][0])+")\t||\tGaztelaniaz "+str((self.tokenak[1][3]/self.tokenak[1][2])*100)+" ("+str(self.tokenak[1][3])+"/"+str(self.tokenak[1][2])+")"
-        hiru = "\nHiru hitzetakoak\tIngelesez "+str((self.tokenak[2][1]/self.tokenak[2][0])*100)+" ("+str(self.tokenak[2][1])+"/"+str(self.tokenak[2][0])+")\t||\tGaztelaniaz "+str((self.tokenak[2][3]/self.tokenak[2][2])*100)+" ("+str(self.tokenak[2][3])+"/"+str(self.tokenak[2][2])+")"
-        lau = "\nLau hitzetakoak\t\tIngelesez "+str((self.tokenak[3][1]/self.tokenak[3][0])*100)+" ("+str(self.tokenak[3][1])+"/"+str(self.tokenak[3][0])+")\t||\tGaztelaniaz "+str((self.tokenak[3][3]/self.tokenak[3][2])*100)+" ("+str(self.tokenak[3][3])+"/"+str(self.tokenak[3][2])+")"
-        gehi = "\nHitz gehiagotakoak\tIngelesez "+str((self.tokenak[4][1]/self.tokenak[4][0])*100)+" ("+str(self.tokenak[4][1])+"/"+str(self.tokenak[4][0])+")\t||\tGaztelaniaz "+str((self.tokenak[4][3]/self.tokenak[4][2])*100)+" ("+str(self.tokenak[4][3])+"/"+str(self.tokenak[4][2])+")"
-        
+        try:
+            bat = "\nHitz bakarrekoak\tIngelesez "+str(((self.tokenak[0][1]/self.tokenak[0][0])*100))+" ("+str(self.tokenak[0][1])+"/"+str(self.tokenak[0][0])+")\t||\tGaztelaniaz "+str(((self.tokenak[0][3]/self.tokenak[0][2])*100))+" ("+str(self.tokenak[0][3])+"/"+str(self.tokenak[0][2])+")"
+            bi = "\nBi hitzetakoak\t\tIngelesez "+str((self.tokenak[1][1]/self.tokenak[1][0])*100)+" ("+str(self.tokenak[1][1])+"/"+str(self.tokenak[1][0])+")\t||\tGaztelaniaz "+str((self.tokenak[1][3]/self.tokenak[1][2])*100)+" ("+str(self.tokenak[1][3])+"/"+str(self.tokenak[1][2])+")"
+            hiru = "\nHiru hitzetakoak\tIngelesez "+str((self.tokenak[2][1]/self.tokenak[2][0])*100)+" ("+str(self.tokenak[2][1])+"/"+str(self.tokenak[2][0])+")\t||\tGaztelaniaz "+str((self.tokenak[2][3]/self.tokenak[2][2])*100)+" ("+str(self.tokenak[2][3])+"/"+str(self.tokenak[2][2])+")"
+            lau = "\nLau hitzetakoak\t\tIngelesez "+str((self.tokenak[3][1]/self.tokenak[3][0])*100)+" ("+str(self.tokenak[3][1])+"/"+str(self.tokenak[3][0])+")\t||\tGaztelaniaz "+str((self.tokenak[3][3]/self.tokenak[3][2])*100)+" ("+str(self.tokenak[3][3])+"/"+str(self.tokenak[3][2])+")"
+            gehi = "\nHitz gehiagotakoak\tIngelesez "+str((self.tokenak[4][1]/self.tokenak[4][0])*100)+" ("+str(self.tokenak[4][1])+"/"+str(self.tokenak[4][0])+")\t||\tGaztelaniaz "+str((self.tokenak[4][3]/self.tokenak[4][2])*100)+" ("+str(self.tokenak[4][3])+"/"+str(self.tokenak[4][2])+")"
+        except ZeroDivisionError:
+            pass
         denK = "\nDENERA ITZULITAKO KONTZEPTUAK\t"+str(self.kontzeptuakItzuliak)
         denTSpa = str(self.tokenak[0][3]+self.tokenak[1][3]+self.tokenak[2][3]+self.tokenak[3][3]+self.tokenak[4][3])
         denTEng = str(self.tokenak[0][1]+self.tokenak[1][1]+self.tokenak[2][1]+self.tokenak[3][1]+self.tokenak[4][1])

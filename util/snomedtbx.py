@@ -7,7 +7,9 @@ from util.kontzeptutbx import KontzeptuTBX
 from util.enumeratuak import Iturburua
 from util.terminotbxsnomed import TerminoTBXSnomed
 from util.ordaintbxsnomed import OrdainTBXSnomed
-import re,unidecode,codecs
+import re,unidecode,codecs,nltk
+#from analizatzaileak.analizatzailea_en import tokenizatu
+from util.klaseak import *
 class SnomedTBX:
     
 
@@ -46,13 +48,30 @@ class SnomedTBX:
         p = ET.SubElement(h3,"p",type="XCSURI").text = "TBXXCSV02_TZOS.xcs"
         return header
 
-    def ordenatu(self):
-        container = self.erroa.findall('./text/body/termEntry')
-        # container.sort(key = lambda x: len(x.split())) PROBATU HONEKIN, x beharrean, preferredTerm izango da baina..
-        data = []
-        for elem in container:
+    def ordenatu(self,hierarkia):
+        #Fitxategi batean hierarkiaren deskribapenen identifikadorea token kopuruarekin batera gordeko dugu (ordenatuta, bide batez), baino ez dugu XML dokumentua berordenatzen.
+        fitx = self.path+'/snomed/tokenak/'+hierarkia.lower()+'.txt'
+        with codecs.open(fitx,'w',encoding='utf-8') as fout:
+            fout.write("")
+        kopuruka = ['']
+        for elem in self.erroa.findall('./text/body/termEntry'):
             kontz = KontzeptuTBX(elem)
-            key = kontz.getPreferredTerm('en')
+            en_term = kontz.getTerminoak('en')+kontz.getTerminoak('es')
+            for n_term in en_term:
+                termino = TerminoTBXSnomed(n_term)
+                term = termino.getTerminoa()
+                tokenak = nltk.word_tokenize(term)
+                kopurua = len(tokenak)
+                iden = termino.getId()
+                while len(kopuruka) <= kopurua:
+                    kopuruka.append('')
+                kopuruka[kopurua] += iden+'\t'+str(kopurua)+'\n'
+            
+        for i in range(0,len(kopuruka)):
+            if kopuruka[i]:
+                with codecs.open(fitx,'a',encoding='utf-8') as fout:
+                    fout.write(kopuruka[i])
+
 
     def semanticTagLortu(fsnTerm,hizkuntza='en'):
         if hizkuntza == 'es':
@@ -68,96 +87,102 @@ class SnomedTBX:
         else:
             return 'Hutsa'
 
+
     def langSetEzarri(self,pre,syn,hizk):
         langSet = ET.Element('langSet')
         langSet.set('{http://www.w3.org/XML/1998/namespace}lang',hizk)
-        for pre1 in pre:
-            ntig = ET.SubElement(langSet,'ntig',id=hizk+pre1[0])
+        #for pre1 in pre:
+        if not pre and syn:
+            pre = syn.pop(0)
+        if pre:
+            ntig = ET.SubElement(langSet,'ntig',id=hizk+pre["descriptionId"])
             termGrp = ET.SubElement(ntig,'termGrp')
-            term = ET.SubElement(termGrp,'term').text = pre1[7]
+            term = ET.SubElement(termGrp,'term').text = pre["term"]
             termNote = ET.SubElement(termGrp,'termNote',type='administrativeStatus').text = 'preferredTerm-adm-sts'
-            sortKey = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(pre1[7])
+            sortKey = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(pre["term"])
             #workStatus = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'importedElement'
-            if 'InitialInsensitive' == pre1[8]:
+            if "900000000000020002" == pre["initialCapitalStatus"]:
                 cS = 'InitialInsensitive'
-            elif 'Sensitive' == pre1[8]:
+            elif '900000000000017005' == pre["initialCapitalStatus"]:
                 cS = 'Sensitive'
             else:
                 cS = 'Insensitive'
             usageNote = ET.SubElement(termGrp,'termNote',type='usageNote').text = cS
+
+        #print(syn)
         for syn1 in syn:
-            ntig = ET.SubElement(langSet,'ntig',id=hizk+syn1[0])
+            ntig = ET.SubElement(langSet,'ntig',id=hizk+syn1["descriptionId"])
             termGrp = ET.SubElement(ntig,'termGrp')
-            term = ET.SubElement(termGrp,'term').text = syn1[7]
+            term = ET.SubElement(termGrp,'term').text = syn1["term"]
             termNote = ET.SubElement(termGrp,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
-            sortKey = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(syn1[7])
+            sortKey = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(syn1["term"])
             #workStatus = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'importedElement'
-            if CaseSignificance['InitialInsensitive'] == syn1[8]:
+            if CaseSignificance['InitialInsensitive'] == syn1["initialCapitalStatus"]:
                 cS = 'InitialInsensitive'
-            elif CaseSignificance['Sensitive'] == syn1[8]:
+            elif CaseSignificance['Sensitive'] == syn1["initialCapitalStatus"]:
                 cS = 'Sensitive'
             else:
                 cS = 'Insensitive'
             usageNote = ET.SubElement(termGrp,'termNote',type='usageNote').text = cS
         return langSet
 
-    def terminoenXML(self,hie,cId,fsn,preEng,preSpa,synEng,synSpa):
-        fsnTerm = fsn[0][7]
+
+    def terminoenXML(self,hie,cId,kontzeptu_en,kontzeptu_es):
+        fsnTerm = kontzeptu_en["fullySpecifiedName"]
         semTag = SnomedTBX.semanticTagLortu(fsnTerm)
         termEntry = ET.Element('termEntry',id='c'+cId)
-        sfH = Hierarkia[hie][0]
+        sfH = Hierarkia_RF2[hie][0]
         if semTag != 'Hutsa':
             sfH += '-'+SemanticTag[semTag][0]
         subFieHie = ET.SubElement(termEntry,'descrip',type='subjectField').text = sfH
         defEl = ET.SubElement(termEntry,'descrip',type='definition').text = fsnTerm
-        termEntry.append(self.langSetEzarri(preEng,synEng,'en'))
-        spa = self.langSetEzarri(preSpa,synSpa,'es')
-        if spa.find('ntig'):
+        if "preferredDesc" not in kontzeptu_en:
+            print("Hobetsirik gabe!! ENG")
+            print(kontzeptu_en)
+        termEntry.append(self.langSetEzarri(kontzeptu_en.get("preferredDesc",[]),kontzeptu_en.get("synonymDesc",[]),'en'))
+        # if "preferredDesc" not in kontzeptu_es:
+        #     print("Hobetsirik gabe!! SPA")
+        #     print(kontzeptu_es)
+        spa = self.langSetEzarri(kontzeptu_es.get("preferredDesc",[]),kontzeptu_es.get("synonymDesc",[]),'es')
+        if spa.find('ntig') is not None: 
             termEntry.append(spa)
         return termEntry
 
-    def xmltanBanatu(self):
-        for hie in Hierarkia:
-            i = 1
-            cli = ['','']
-            if hie == 'CLINICAL':
-                i = 2
-                cli = ['_FIN','_DIS']
-            for j in range(0,i):
-                fsnak = self.fitx2hash(self.path+'snomed/hierarkiak/'+hie+cli[j]+'_fsn.txt')
-                preEngak = self.fitx2hash(self.path+'snomed/hierarkiak/'+hie+cli[j]+'_pre_eng.txt')
-                preSpaak = self.fitx2hash(self.path+'snomed/hierarkiak/'+hie+cli[j]+'_pre_spa.txt')
-                synEngak = self.fitx2hash(self.path+'snomed/hierarkiak/'+hie+cli[j]+'_syn_eng.txt')
-                synSpaak = self.fitx2hash(self.path+'snomed/hierarkiak/'+hie+cli[j]+'_syn_spa.txt')
-                self.erroa = ET.Element('martif',type='TBX')
-                self.erroa.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
-                self.erroa.append(self.burukoaXMLSnomed(hie))
-                text = ET.SubElement(self.erroa,'text')
-                body = ET.SubElement(text,'body')
-                for cId,fsn in fsnak.items():
-                    preEng = preEngak.get(cId,[])
-                    preSpa = preSpaak.get(cId,[])
-                    synEng = synEngak.get(cId,[])
-                    synSpa = synSpaak.get(cId,[])
-                    body.append(self.terminoenXML(hie,cId,fsn,preEng,preSpa,synEng,synSpa))
-                #self.ordenatu()
-                dok = self.path+'snomed/XMLak/'+hie+cli[j]+'.xml'
-                tree = ET.ElementTree(self.erroa)
-                tree.write(dok,encoding='utf-8',xml_declaration=True)
-                print(hie+cli[j],'hierarkiaren XMLa sortua.')
+
+    def xmltanBanatu(self,konZer_en,konZer_es):
+        for hie in Hierarkia_RF2:
+            self.erroa = ET.Element('martif',type='TBX')
+            self.erroa.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
+            self.erroa.append(self.burukoaXMLSnomed(hie))
+            text = ET.SubElement(self.erroa,'text')
+            body = ET.SubElement(text,'body')
+            for cId in konZer_en.hierarkiakoakJaso(hie):
+                body.append(self.terminoenXML(hie,cId,konZer_en.zerrenda[cId],konZer_es.zerrenda[cId]))
+            self.ordenatu(hie)
+            dok = self.path+'snomed/XMLak/'+hie+'.xml'
+            tree = ET.ElementTree(self.erroa)
+            tree.write(dok,encoding='utf-8',xml_declaration=True)
+            print(hie,'hierarkiaren XMLa sortua.')
 
     def getKontzeptu(self,cId):
         kon = self.erroa.find('text/body/termEntry[@id="c'+cId+'"]')
-        if kon:
+        if kon is not None:
             return KontzeptuTBX(kon)
         else:
             return None
+
+    def getKontzeptua(self,cId):
+        return self.erroa.find('text/body/termEntry[@id="c'+cId+'"]')
         
     def getKontzeptuak(self):
         return self.erroa.findall('text/body/termEntry')
 
     def gorde(self):
-        dok = self.path+'snomed/XMLak/'+self.hierarkia+self.clinical+'_ald.xml'
+        if self.clinical == "":
+            lag = "_ald"
+        else:
+            lag = ""
+        dok = self.path+'snomed/XMLak/'+self.hierarkia+self.clinical+lag+".xml"#'_ald.xml'
         tree = ET.ElementTree(self.erroa)
         tree.write(dok,encoding='utf-8',xml_declaration=True)
 
@@ -330,10 +355,10 @@ class SnomedTBX:
                             ordaKopSpa += 1
                             spa = True
                         termKopSpa.add(h.text)
-                for it in ordain.findall('admin[@type="entrySource"]'):
-                    kop = iturOrd.get(it.text,0)
-                    iturOrd[it.text] = kop + 1
-                    iturTer.add(it.text)
+                    for it in ordain.findall('admin[@type="entrySource"]'):
+                        kop = iturOrd.get(it.text,0)
+                        iturOrd[it.text] = kop + 1
+                        iturTer.add(it.text)
             for it in iturTer:
                 kop = iturMatch.get(it,0)
                 iturMatch[it] = kop + 1
@@ -348,28 +373,41 @@ class SnomedTBX:
         print('Termino kopurua denera:',len(termKopEng)+len(termKopSpa),'Eng:',len(termKopEng),'Spa:',len(termKopSpa))
         print('Kontzeptu kopurua denera:',len(euLanak))
         print('Ingelesa:')
-        for it in Iturburua:
+        Iturburua1 = ['ZT',"Erizaintza",'Anatomia','GNS10','EuskalTerm','Elhuyar','AdminSan','Medikuak','MapGNS','Morfologia']
+        for it in Iturburua1:
             kodea = Iturburua[it][0]
             ordK = iturOrdEng.get(kodea,0)
             matK = iturMatchEng.get(kodea,0)
-            print(it,'ordain:',ordK,'match',matK)
+            print(it,'match',matK,'ordain:',ordK)
         print('\nGaztelania:')
-        for it in Iturburua:
+        for it in Iturburua1:
             kodea = Iturburua[it][0]
             ordK = iturOrdSpa.get(kodea,0)
             matK = iturMatchSpa.get(kodea,0)
-            print(it,'ordain:',ordK,'match',matK)
+            print(it,'match',matK,'ordain:',ordK)
         print('\nDenera:')
-        for it in Iturburua:
+        for it in Iturburua1:
             kodea = Iturburua[it][0]
             ordK = iturOrd.get(kodea,0)
             matK = iturMatch.get(kodea,0)
-            print(it,'ordain:',ordK,'match',matK)
+            print(it,'match',matK,'ordain:',ordK)
+
+
+    def getIturburutik(self):
+
+        Iturburua1 = ['ZT',"Erizaintza",'Anatomia','GNS10','EuskalTerm','Elhuyar','AdminSan','Medikuak','MapGNS','Morfologia']
+        euLanak = self.erroa.findall('text/body/termEntry/langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/ntig/admin[@type="entrySource"]')
+        ordainKopuruak = {}
+        for lag in euLanak:
+            ordK = ordainKopuruak.get(lag.text,0)
+            ordainKopuruak[lag.text] = ordK+1
+        return ordainKopuruak
     
+
     def getTermino(self,terminoId):
         #terminoaren ID-a emanda, terminoa bera itzultzen du (TerminoTBXSnomed klasea)
         term = self.erroa.find('text/body/termEntry/langSet/ntig[@id="'+terminoId+'"]')
-        if term:
+        if term is not None:
             return TerminoTBXSnomed(term)
         else:
             return None
@@ -429,8 +467,9 @@ class SnomedTBX:
                     itzuliak[engText] = eusSet.union(lag)
         return itzuliak
 
-    def getItzuliak(self,hizkuntza):
+    def getItzuliak(self,hizkuntza,jatorria = False):
         itzuliak = {}
+        jat = {}
         for termEntry in self.erroa.findall('text/body/termEntry'):
             eusak = termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/ntig')
             if eusak:
@@ -449,6 +488,12 @@ class SnomedTBX:
                             lag = itzuliak.get(engIdak[it],set())
                             lag.add(eusO.getKarKatea())
                             itzuliak[engIdak[it]] = lag
+                            if jatorria:
+                                lag = itzuliak.get(engIdak[it],set())
+                                lag.update(eusO.getPatroia())
+                                itzuliak[engIdak[it]] = lag
+        if jatorria:
+            return itzuliak,jat
         return itzuliak
 
     def getMorfologiakBakarrik(self):
@@ -461,3 +506,5 @@ class SnomedTBX:
                 if len(eSak) == 1 and eSak[0].text == '101':
                     kont += 1
         return kont
+
+

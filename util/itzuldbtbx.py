@@ -2,11 +2,48 @@
 # -*- coding: utf-8 -*-
 #import xml.etree.ElementTree as ET
 from lxml import etree as ET
-import unidecode
+import unidecode,codecs
 
 class ItzulDBTBX:
 
+    def adjKargatu (self,path):
+        self.adj_hiz = {}
+        with codecs.open(path+"/baliabideak/edbl_adjektiboak.txt",encoding= "iso-8859-1") as adjf:
+            lerroak = adjf.readlines()
+            for line in lerroak[2:]:
+                if line:
+                    zat = line.strip().split("\t")
+                    self.adj_hiz[zat[1]] = zat[4]
+
+    def katKargatu(self,path):
+        self.kat_hiz = {}
+        with codecs.open(path+"/baliabideak/edbl_kategoriak.txt",encoding= "iso-8859-1") as katf:
+            lerroak = katf.readlines()
+            for line in lerroak[2:]:
+                zat = line.strip().split("\t")
+                self.kat_hiz[zat[1]] = zat[3]+'\t'+zat[4]
+
+    def edbl2enum(self,kat,azpKat):
+        pOs = set()
+        if kat == "IZE":
+            if azpKat[:3] == "LIB" or azpKat[:2] == "IB" :
+                pOs.add("IzenBerezi")
+            else:
+                pOs.add("Izen")
+        elif kat == "ADB":
+            pOs.add("Aditzondo")
+        elif kat == "SIG" or kat == "LAB" or kat == "SNB":
+            pOs.add("Izen")
+            termType = "Acronym"
+        elif kat == "ADI":
+            pOs.add("Aditz")
+        else:
+            pOs.add("Besterik")
+        return pOs
+
     def __init__(self,hizkuntza,path):
+        self.adjKargatu(path)
+        self.katKargatu(path)
         self.hizkuntza = hizkuntza
         if hizkuntza == 0:
             hiz = 'en'
@@ -45,8 +82,12 @@ class ItzulDBTBX:
             self.termIdAlt += 1
             langSet = ET.SubElement(termEntry,'langSet')
             langSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
+            izena = False
             for eu,orda in hz.items():
                 eu = eu.decode('utf-8')
+                posak = orda.getPOS()
+                if izena and ("Aditz" in posak or "Aditzondo" in posak or "Adjektibo" in posak) and "Izen" not in posak and "IzenBerezi" not in posak:
+                    continue
                 tig = ET.SubElement(langSet,'tig',id='t'+str(self.termIdAlt))
                 term = ET.SubElement(tig,'term').text = eu
                 sKey = ET.SubElement(tig,'admin',type='sortKey').text = unidecode.unidecode(eu)
@@ -55,14 +96,20 @@ class ItzulDBTBX:
                     enSo = ET.SubElement(tig,'admin',type='entrySource').text = hiz
                 if not orda.getPOS():
                     orda.setPOS('Izen')
-                for pos in orda.getPOS():
+                for pos in posak:
+                    #print(erd,eu,pos)
                     ePOS = ET.SubElement(tig,'termNote',type='partOfSpeech').text =pos
+                    #print("tig",ET.tounicode(tig,pretty_print=True))
+                    if pos in ["Izen","IzenBerezi"]:
+                        izena = True
                 rel = ET.SubElement(tig,'descrip',type='reliabilityCode').text = str(orda.getReliabilityCode())
                 caSi = ET.SubElement(tig,'termNote',type='usageNote').text = orda.getCaseSignificance()
                 #print(eu,hiz,orda.getTermType())
                 if orda.getTermType() != 'Unknown':
                     teTy = ET.SubElement(tig,'termNote',type='termType').text = orda.getTermType()
                 self.termIdAlt += 1
+                # if erd == "evening":
+                #     print("tig",ET.tounicode(tig,pretty_print=True))
             self.entryIdAlt += 1
         return body
 
@@ -79,8 +126,10 @@ class ItzulDBTBX:
     def kargatu(self,fitxategia=''):
         if fitxategia:
             dok = fitxategia
+
         else:
             dok = self.path+'/baliabideak/ItzulDB'+self.hizkuntza+'Has.xml'
+        print(dok)
         parser = ET.XMLParser(encoding='utf-8')
         tree = ET.parse(dok,parser)
         self.erroa = tree.getroot()
@@ -95,7 +144,7 @@ class ItzulDBTBX:
             if lag and lag.lower() == terminoa.lower():
                 return termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/tig',namespaces=namespace)
                 
-    def gehituParea(self,term,ordList,entrySource,caseSig,pOS,tT,rC):
+    def gehituParea(self,term,ordList,entrySource,caseSig,pOS,tT,rC,orPat):
         termEntry = ET.SubElement(self.erroa.find('text/body'),'termEntry',id='p'+str(self.entryIdAlt))
         langSetErd = ET.SubElement(termEntry,'langSet')
         langSetErd.set('{http://www.w3.org/XML/1998/namespace}lang',self.hizkuntza)
@@ -107,18 +156,35 @@ class ItzulDBTBX:
         langSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
         for eu in ordList:
             if eu:
+                if not pOS:
+                    if eu in self.adj_hiz:
+                        if "\tIZLK" in self.adj_hiz[eu]:
+                            pOS.add("Izenlagun")
+                        else:
+                            pOS.add("Izenondo")
+                    elif eu in self.kat_hiz:
+                        #print(self.kat_hiz[eu])
+                        kat = self.kat_hiz[eu].split("\t")[0]
+                        azpKat = self.kat_hiz[eu].split("\t")[1]
+                        pOS = self.edbl2enum(kat,azpKat)
                 tig = ET.SubElement(langSet,'tig',id='t'+str(self.termIdAlt))
                 term = ET.SubElement(tig,'term').text = eu
                 sKey = ET.SubElement(tig,'admin',type='sortKey').text = unidecode.unidecode(eu)
                 ews = ET.SubElement(tig,'admin',type='elementWorkingStatus').text = 'starterElement'
                 enSo = ET.SubElement(tig,'admin',type='entrySource').text = entrySource
-                ePOS = ET.SubElement(tig,'termNote',type='partOfSpeech').text =pOS
+                if orPat:
+                    #print("orPat",orPat)
+                    for orP in orPat:
+                        orDa = ET.SubElement(tig,"admin",type="originatingDatabase").text = orP
+                for p in pOS:
+                    ePOS = ET.SubElement(tig,'termNote',type='partOfSpeech').text =p
                 rel = ET.SubElement(tig,'descrip',type='reliabilityCode').text = str(rC)
                 caSi = ET.SubElement(tig,'termNote',type='usageNote').text = caseSig
                 #print(eu,hiz,orda.getTermType())
                 if tT != 'Unknown':
                     teTy = ET.SubElement(tig,'termNote',type='termType').text = tT
                 self.termIdAlt += 1
+
         self.entryIdAlt += 1
         return langSet.findall('tig')
 

@@ -5,7 +5,7 @@ import sys,os,getopt,datetime,codecs,xml.dom.minidom
 import xml.etree.ElementTree as ET
 from util.snomed import Snomed
 from xml.dom import minidom
-from util.enumeratuak import Hierarkia
+from util.enumeratuak import Hierarkia_RF2_izen as Hierarkia
 
 def main(argv):
     path = '../../euSnomed/'
@@ -14,6 +14,7 @@ def main(argv):
     sin = False
     denak = '../../SintaxiMaila/terminoak/'
     zbD = "../../euSnomed/zerrendaBeltzak/"
+    version = "20150731"
     #out = path+'/itzuliGabeak/'+hie+'-hitzBakarrekoak.txt'
     try:
         opts, args = getopt.getopt(argv,"hp:l:s",["path=","hizkuntza=","sinonimoak="])
@@ -40,10 +41,10 @@ def main(argv):
         i = 1
         cli = ['_ald','_ald']
         zbCli = ['','']
-        if hie == 'CLINICAL':
-            i = 2
-            cli = ['_FIN_ald','_DIS_ald']
-            zbCli = ["_fin","_dis"]
+        # if hie == 'CLINICAL':
+        #     i = 2
+        #     cli = ['_FIN_ald','_DIS_ald']
+        #     zbCli = ["_fin","_dis"]
         for j in range(0,i):
             print(hie+cli[j])
             zb = {}
@@ -61,9 +62,9 @@ def main(argv):
             else:
                 print(zbD+hie.lower()+zbCli[j].lower()+'-ZBen.txt')
             snomed.kargatu(hie.upper(),cli[j])
-            out2 = path+hiztegi+hie.lower()+cli[j].lower().replace('_ald','')+'-hiztegiElebiduna.txt'
-            out1 = path+hiztegi+hie.lower()+cli[j].lower().replace('_ald','')+'-hiztegiElebakarra.txt'
-            out = denak+hie.upper()+cli[j].upper().replace('_ALD','')+'_DENAK.txt'
+            out2 = path+hiztegi+hie.lower()+cli[j].lower().replace('_ald','')+'-hiztegiElebiduna_'+version+'.txt'
+            out1 = path+hiztegi+hie.lower()+cli[j].lower().replace('_ald','')+'-hiztegiElebakarra_'+version+'.txt'
+            out = denak+hie.upper()+cli[j].upper().replace('_ALD','')+'_DENAK_'+version+'.txt'
             itzGab = snomed.getItzuliGabeak(hizkuntza)
             irteera = []
             for ter in itzGab:
@@ -76,14 +77,17 @@ def main(argv):
             if sin:
                 itzuliak = snomed.getItzuliakSinonimoak(hizkuntza)
             else:
-                itzuliak = snomed.getItzuliak(hizkuntza)
+                itzuliak,jatorria = snomed.getItzuliak(hizkuntza,True)
             with codecs.open(out2,'w',encoding='utf-8') as fout:
                 for term,ordainak in itzuliak.items():
                     if term in zb:
                         for ordL in zb[term]:
                             if ordL in ordainak:
                                 ordainak.remove(ordL)
-                    fout.write(term+': '+';'.join(ordainak)+'\n')
+                    lag = ""
+                    if jatorria:
+                        lag = "\t"+';'.join(jatorria)
+                    fout.write(term+': '+';'.join(ordainak)+lag+'\n')
             with codecs.open(out,'w',encoding='utf-8') as fout:
                 fout.write('\n'.join(irteera))
                 lag = list(itzuliak.keys())

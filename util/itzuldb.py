@@ -3,10 +3,29 @@
 from util.itzuldbordain import ItzulDBOrdain
 from util.itzuldbtbx import ItzulDBTBX
 import csv,re,codecs
+from lxml import etree as ET
 
 class ItzulDB:
     
-   
+    def edbl2enum(self,kat,azpkat):
+        pOs = set()
+        if kat == "IZE":
+            if azpKat[:3] == "LIB" or azpKat[:2] == "IB" :
+                pOs.add("IzenBerezi")
+            else:
+                pOs.add("Izen")
+        elif kat == "ADB":
+            pOs.add("Aditzondo")
+        elif kat == "SIG" or kat == "LAB" or kat == "SNB":
+            pOs.add("Izen")
+            termType = "Acronym"
+        elif kat == "ADI":
+            pOs.add("Aditz")
+        else:
+            pOs.add("Besterik")
+        return pOs
+        
+    
     def hashSet(self,hasha,key,value,itur,caseSig,pOs,termType,rC,zb):
         key = key.strip()
         if 'Ã' in key :
@@ -30,10 +49,46 @@ class ItzulDB:
                 for ket,ordain in ordainList.items():
                     if 'Elhuyar' not in ordain.getHiztegiZerrenda():
                         return None
+            if not pOs:
+                if value in self.itzTBX.adj_hiz:
+                    if "\tIZLK" in self.itzTBX.adj_hiz[value]:
+                        pOs.add("Izenlagun")
+                    else:
+                        pOs.add("Izenondo")
+                elif value in self.itzTBX.kat_hiz:
+                    kat = self.itzTBX.kat_hiz[value].split("\t")[3]
+                    azpKat = self.itzTBX.kat_hiz[value].split("\t")[4]
+                    pOs = self.edbl2enum(kat,azpKat)
+            elif "Adjektibo" in pOs:
+                if value in self.itzTBX.adj_hiz:
+                    pOs.remove("Adjektibo")
+                    if "\tIZLK" in self.itzTBX.adj_hiz[value]:
+                        pOs.add("Izenlagun")
+                    else:
+                        pOs.add("Izenondo")
+                else:
+                    if len(value)> 3 and ((value[-2:] in [b"ko",b"go"] and value[-3] != b"i") or value[-3:] == b"ren"):
+                        pOs.add("Izenlagun")
+                    else:
+                        pOs.add("Izenondo")
+                    pOs.remove("Adjektibo")
+
             ordainDat = ordainList.get(value,ItzulDBOrdain())
             ordainDat.gehituDatuak(itur,caseSig,pOs,termType,rC)
             ordainList[value]=ordainDat
             hasha[key]=ordainList
+      
+      
+    # def zt2hashXML(self,path,hizkuntza,zbEng,zbSpa):
+    #     ztEng = {}
+    #     ztSpa = {}
+    #     ztGaiak = ['Zool.','Anat.','Med.','Fisiol.','Mikrob.','Biokim.','Biol.','Psikiat.','Genet.','Fisiol.']
+    #     fitx = path+'ZTH_2013.xml'
+    #     parser = ET.XMLParser(encoding='utf-8')
+    #     tree = ET.parse(fitx,parser)
+    #     erroa = tree.getroot()
+    #     for tE in erroa.findall('body/termEntry'):
+            
 
     def zt2hash(self,path,hizkuntza,zbEng,zbSpa):
         ztEng = {}
@@ -138,29 +193,6 @@ class ItzulDB:
                             pOS.add('Izen')
                             tT = 'Unknown'
                             self.hashSet(spaH,spa,eus,'Anatomia',cS,pOS,tT,9,zbSpa)
-        # with codecs.open(path+'/baliabideak/anatomia_glos.tsv',encoding='utf-8') as fitx:
-        #     tsvin = csv.reader(fitx,delimiter='\t')
-        #     for ordainak in tsvin:
-        #         if ordainak[2] != '' and ordainak[3] != '':
-        #             eusak = re.split(', |; |\. ',ordainak[0])
-        #             engak = re.split(', |; |\. ',ordainak[3])
-        #             spaak = re.split(', |; |\. ',ordainak[2])
-        #             if (hizkuntza == 0 or hizkuntza == 2) and ordainak[3] != '' and '---' not in ordainak[3]:
-        #                 for eng in engak:
-        #                     if '?' not in eng:
-        #                         for eus in eusak:
-        #                             cS = 'Unknown'
-        #                             pOS = set()
-        #                             tT = 'Unknown'
-        #                             self.hashSet(engH,eng,eus,'Anatomia',cS,pOS,tT,6)
-        #             if (hizkuntza >= 1) and ordainak[2] != '' and '---' not in ordainak[2]:
-        #                 for spa in spaak:
-        #                     if '?' not in spa:
-        #                         for eus in eusak:
-        #                             cS = 'Unknown'
-        #                             pOS = set()
-        #                             tT = 'Unknown'
-        #                             self.hashSet(spaH,spa,eus,'Anatomia',cS,pOS,tT,6)
                                     
     def gns2hash(self,path,hizkuntza,engH,spaH,zbEng,zbSpa):
         with codecs.open(path+'/baliabideak/gns10garbi6.txt',encoding='utf-8') as fitx:
@@ -300,7 +332,8 @@ class ItzulDB:
                             engLag = engLag.replace(' {to}','')
                         engak = engLag.split(';')
                         for eng in engak:
-                            lag = sar[2][:-1]
+                            eng = eng.strip()
+                            lag = sar[2][:-1].split(". (joan)")[0]
                             if '<I>' in lag:
                                 regex1 = re.compile('\[<I>[a-z ,]+<I>\]')
                                 regex2 = re.compile('\(<I>[a-z ,]+<I>\)')
@@ -309,9 +342,9 @@ class ItzulDB:
                             if '(' in lag:
                                 regex = re.compile('\([^)]+?\)')
                                 lag = regex.sub('',lag)
-                            eusak = re.split(',|;',lag.split('. (joan)')[0])
+                            eusak = re.split(',|;',lag)
                             for eus in eusak:
-                                if '/' in eus or '...' in eus or eus[-1] == '-' or eus[0] == '-':
+                                if '/' in eus or '...' in eus or eus[-1] == '-' or eus[0] == '-' or "+" in eus:
                                     continue
                                 if '[' in eus:
                                     regex = re.compile('\[[^]]+?\]')
@@ -447,27 +480,33 @@ class ItzulDB:
                 line = line.strip()
                 lineLag = line.split('\t')
                 eng = lineLag[0]
-                eusak = lineLag[2].split(',')
+                eusak = lineLag[2:]
                 for eus in eusak:
-                    self.hashSet(engH,eng,eus,'Morfologia','InitialInsensitive',['Izen'],'TranscribedForm',7,zbEng)
+                    if eus[0].isupper():
+                        us = "Sensitive"
+                    else:
+                        us = "InitialInsensitive"
+                    self.hashSet(engH,eng,eus,'Morfologia',us,set(['Izen']),'TranscribedForm',7,zbEng)
 
     def medikuak2Hash(self,path,engH,zbEng):
         with codecs.open(path+'baliabideak/felixenPareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
                 line = line.strip()
                 lineLag = line.split('\t')
-                eng = lineLag[0]
-                eusakLag = lineLag[1]
-                eusak = []
-                if '"' in eusakLag:
-                    eusak = eusakLag[1:-1].split('","')
-                else:
-                    eusak = eusakLag.split(',')
+                eng = lineLag[0][1:-1]
+                eusak = lineLag[1:]
+                if "" in eusak:
+                    eusakLag.pop("")
+                # eusak = []
+                # if '"' in eusakLag:
+                #     eusak = eusakLag[1:-1].split('","')
+                # else:
+                #     eusak = eusakLag.split(',')
                 for eus in eusak:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    self.hashSet(engH,eng,eus,'Medikuak',cS,['Izen'],'',9,zbEng)
+                    self.hashSet(engH,eng,eus[1:-1],'Medikuak',cS,set(['Izen']),'',9,zbEng)
                     
         with codecs.open(path+'baliabideak/karlosenPareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
@@ -484,7 +523,7 @@ class ItzulDB:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    self.hashSet(engH,eng,eus,'Medikuak',cS,['Izen'],'',9,zbEng)
+                    self.hashSet(engH,eng,eus,'Medikuak',cS,set(['Izen']),'',9,zbEng)
 
         with codecs.open(path+'baliabideak/felixenBestePareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
@@ -496,9 +535,9 @@ class ItzulDB:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    pos = ['Izen']
+                    pos = set(['Izen'])
                     if len(lineLag) > 2:
-                        pos = [lineLag[2]]
+                        pos = set([lineLag[2]])
                     self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,zbEng)
         
         with codecs.open(path+'baliabideak/karlosenBestePareak.txt',encoding='utf-8') as fitx:
@@ -511,9 +550,9 @@ class ItzulDB:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    pos = ['Izen']
+                    pos = set(['Izen'])
                     if len(lineLag) > 2:
-                        pos = [lineLag[2]]
+                        pos = set([lineLag[2]])
                     self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,zbEng)
 
     def hasieratu(self,path,hizkuntza):
@@ -541,23 +580,25 @@ class ItzulDB:
             self.adminSan2hash(path,spaH,zbSpa)
             print('+AdminSan',len(engH),len(spaH))
         if hizkuntza == 2 or hizkuntza == 0:
-            self.morfo2Hash(path,engH,zbEng)
-            print('+Morfosemantika',len(engH),len(spaH))
+            #self.morfo2Hash(path,engH,zbEng)
+            #print('+Morfosemantika',len(engH),len(spaH))
             self.medikuak2Hash(path,engH,zbEng)
             print('+Medikuak',len(engH),len(spaH))
         self.elhuyar2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
         print('+Elhuyar',len(engH),len(spaH))
         return engH,spaH
     
+
     def __init__(self,path,hizkuntza,itzulBool=False,fitxategia=''):
         if itzulBool:
+            self.itzTBX = ItzulDBTBX(0,path)#berdin dio hizkuntza, gero matxakatuko dugu eta. adj eta kat hiztegiak kargatzeko baino ez da
             engH,spaH = self.hasieratu(path,hizkuntza)
             if hizkuntza == 0 or hizkuntza == 2:
-                itzTBX = ItzulDBTBX(0,path)
-                itzTBX.xmltanElkartu(engH)
+                self.itzTBX = ItzulDBTBX(0,path)
+                self.itzTBX.xmltanElkartu(engH)
             if hizkuntza >= 1:
-                itzTBX = ItzulDBTBX(1,path)
-                itzTBX.xmltanElkartu(spaH)
+                self.itzTBX = ItzulDBTBX(1,path)
+                self.itzTBX.xmltanElkartu(spaH)
         else:
             self.itzTBX = ItzulDBTBX(hizkuntza,path)
             self.itzTBX.kargatu(fitxategia)
@@ -566,8 +607,8 @@ class ItzulDB:
     def jaso(self,terminoa):
         return self.itzTBX.jaso(terminoa)
 
-    def gehitu(self,ordList,term,entrySource,caseSig,pOS,tT,rC):
-        return self.itzTBX.gehituParea(term,ordList,entrySource,caseSig,pOS,tT,rC)
+    def gehitu(self,ordList,term,entrySource,caseSig,pOs,tT,rC,orPat=""):
+        return self.itzTBX.gehituParea(term,ordList,entrySource,caseSig,pOs,tT,rC,orPat)
 
 
     def fitxategianGorde(self):
