@@ -55,7 +55,7 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
     termL = tok_kop#len(term.split())
     for el in kode_es:#kode_es:
         #Terminoen kontaketa egiten da estatistikak ateratzeko, zenbat termino ditugun hitz bakarrekoak....
-        terminoS = snomed.getTerminoa(el)#TerminoTBXSnomed(el)
+        terminoS = snomed.getTerminoTBX(el)#TerminoTBXSnomed(el)
         if terminoS == None:
             print("terminoS == None",el,hie)
         konTBX = KontzeptuTBX(terminoS.getKontzeptua())
@@ -90,7 +90,7 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
     for el in kode_en:#konTBX.getTerminoak('en'):
 
         itzulia = False
-        terminoS = snomed.getTerminoa(el)#TerminoTBXSnomed(el)
+        terminoS = snomed.getTerminoTBX(el)#TerminoTBXSnomed(el)
         konTBX = KontzeptuTBX(terminoS.getKontzeptua())
         konId = konTBX.getKontzeptuId()
         #pprint(konTBX)

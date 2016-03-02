@@ -394,8 +394,10 @@ class SnomedTBX:
 
 
     def getIturburutik(self):
-
-        Iturburua1 = ['ZT',"Erizaintza",'Anatomia','GNS10','EuskalTerm','Elhuyar','AdminSan','Medikuak','MapGNS','Morfologia']
+        """
+        hiztegi bat itzultzen du iturburu bakoitzetik 
+        """
+        
         euLanak = self.erroa.findall('text/body/termEntry/langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/ntig/admin[@type="entrySource"]')
         ordainKopuruak = {}
         for lag in euLanak:
@@ -405,7 +407,9 @@ class SnomedTBX:
     
 
     def getTermino(self,terminoId):
-        #terminoaren ID-a emanda, terminoa bera itzultzen du (TerminoTBXSnomed klasea)
+        """
+        terminoaren identifikadorea emanda (terminoId), terminoa bera itzultzen du TerminoTBXSnomed klasekoa
+        """
         term = self.erroa.find('text/body/termEntry/langSet/ntig[@id="'+terminoId+'"]')
         if term is not None:
             return TerminoTBXSnomed(term)
@@ -413,7 +417,9 @@ class SnomedTBX:
             return None
 
     def getTerminoak(self,hizkuntza):
-        #emandako hizkuntzaren termino guztiak itzultzen ditu
+        """
+        emandako hizkuntzaren termino guztiak itzultzen ditu: ntig zerrenda
+        """
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
         return self.erroa.findall('text/body/termEntry/langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+hizkuntza+'"]/ntig',namespaces=namespace)
 

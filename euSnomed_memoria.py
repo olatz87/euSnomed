@@ -119,27 +119,27 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
     gehitzeko = {}
     for eg in egun:
         ordList = eg['ordList']
+        termS = snomed.getTerminoTBX(eg["term"])
+        term = termS.getTerminoa()
         if type(ordList) == type('kuku'):
             ord_lag = ord_h[ordList]
             ap = ''
             if "apl_patroiak" in ord_lag:
                 ap = ord_lag["apl_patroiak"]
-            termS = snomed.getTerminoa(eg["term"])
-            term = termS.getTerminoa()
+
             ordList = itzulDBeng.gehitu(ord_lag['ordList'],term,ord_lag['entrySource'],ord_lag['caseSig'],ord_lag['pOS'],ord_lag['tT'],ord_lag['rC'],ap)
             itzulEnHash[term] = ordList
         elif type(ordList) == type(1):
-            term_l = snomed.getTerminoa(eg['term']).getTerminoa()
             if ordList == 0:
-                ordList = itzulEnHash.get(term_l.lower())
+                ordList = itzulEnHash.get(term.lower())
             else:
-                ordList = itzulSpHash.get(term_l.lower())
+                ordList = itzulSpHash.get(term.lower())
         else:
             print(ordList)
         konTBX = snomed.getKontzeptu(eg["konTBX"][1:])
-        term = snomed.getTerminoa(eg["term"]).term
+
         konTBX.eguneratu(ordList,term,eg['ema'],eg['zb'])
-        lexentzat(ordList,gehitzeko,eg['term'].replace(' ','_'))
+        lexentzat(ordList,gehitzeko,term.replace(' ','_'))
 
     if tok_kop == i_max:
         with codecs.open(path+'/tartekoak/'+hie+'_bai_eng.txt','w',encoding='utf-8') as fitx:

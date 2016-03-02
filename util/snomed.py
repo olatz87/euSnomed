@@ -126,6 +126,9 @@ class Snomed:
         return self.snoTBX.getItzuliak(hizkuntza)
 
     def getItzuliak(self,hizkuntza,jatorria):
+        """
+        
+        """
         return self.snoTBX.getItzuliak(hizkuntza,jatorria)
 
     def getMorfologiakBakarrik(self):
@@ -137,11 +140,20 @@ class Snomed:
     def getIturburutik(self):
         return self.snoTBX.getIturburutik()
 
-    def getTerminoa(self,cId):
-        return self.snoTBX.getTermino(cId)
+    def getTerminoTBX(self,dId):
+        """
+        terminoaren identifikadorea emanda (dId), terminoa bera itzultzen du TerminoTBXSnomed klasekoa
+        """
+        return self.snoTBX.getTerminoTBX(dId)
 
     def kontzeptuaJaso(self,cId):
+        """
+        ElementTree bat itzultzen du: kontzeptua
+        """
         return self.snoTBX.getKontzeptua(cId) #ElementTree bat itzultzen du
 
     def getKontzeptu(self,cId):
+        """
+        KontzeptuTBX bat itzultze du: kontzeptua
+        """
         return self.snoTBX.getKontzeptu(cId) #KontzeptuTBX itzultzen du
