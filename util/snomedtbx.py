@@ -164,7 +164,11 @@ class SnomedTBX:
             tree.write(dok,encoding='utf-8',xml_declaration=True)
             print(hie,'hierarkiaren XMLa sortua.')
 
-    def getKontzeptu(self,cId):
+    def getKontzeptuTBX(self,cId):
+        """
+        KontzeptuTBX bat itzultzen du kontzeptuaren identifikadorea emanda
+        identifikadoreak ez du inolako markarik izan behar. Zuzeneak snomed CT identifikadorea
+        """
         kon = self.erroa.find('text/body/termEntry[@id="c'+cId+'"]')
         if kon is not None:
             return KontzeptuTBX(kon)
@@ -406,7 +410,7 @@ class SnomedTBX:
         return ordainKopuruak
     
 
-    def getTermino(self,terminoId):
+    def getTerminoTBX(self,terminoId):
         """
         terminoaren identifikadorea emanda (terminoId), terminoa bera itzultzen du TerminoTBXSnomed klasekoa
         """

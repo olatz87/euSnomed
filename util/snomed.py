@@ -87,7 +87,7 @@ class Snomed:
                 ban = ler.split('\t')
                 gnsID = ban[11]
                 if gnsID in eusk:
-                    kon = self.snoTBX.getKontzeptu(ban[5])
+                    kon = self.snoTBX.getKontzeptuTBX(ban[5])
                     if kon:
                         ema.gehiAlgoritmoa('mapaketa','ordain')
                         kon.eguneratuGNS(eusk[gnsID],gnsID)
@@ -143,6 +143,7 @@ class Snomed:
     def getTerminoTBX(self,dId):
         """
         terminoaren identifikadorea emanda (dId), terminoa bera itzultzen du TerminoTBXSnomed klasekoa
+        identifikadoreak "es" edo "en" edo "eu" marka izan behar du aurretik
         """
         return self.snoTBX.getTerminoTBX(dId)
 
@@ -152,8 +153,9 @@ class Snomed:
         """
         return self.snoTBX.getKontzeptua(cId) #ElementTree bat itzultzen du
 
-    def getKontzeptu(self,cId):
+    def getKontzeptuTBX(self,cId):
         """
-        KontzeptuTBX bat itzultze du: kontzeptua
+        KontzeptuTBX bat itzultze du kontzeptuaren identifikadorea emanda
+        identifikadoreak ez du inolako markarik izan behar. Zuzeneak snomed CT identifikadorea
         """
-        return self.snoTBX.getKontzeptu(cId) #KontzeptuTBX itzultzen du
+        return self.snoTBX.getKontzeptuTBX(cId) #KontzeptuTBX itzultzen du
