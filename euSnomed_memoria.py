@@ -23,7 +23,7 @@ from copy import deepcopy
 from lxml import etree as ET
 
 
-def lexenEguneratzea():
+def lexenEguneratzea(gehitzeko,hie):
     print("Lex-ak eguneratuko dira",hie.lower(),len(gehitzeko))
     if len(gehitzeko)>0:
         flex_ize = "scriptak/foma/lex/"+hie.lower()+'.lex'
@@ -119,7 +119,7 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
     gehitzeko = {}
     for eg in egun:
         ordList = eg['ordList']
-        termS = snomed.getTerminoTBX(eg["term"])
+        termS = snomed.getTerminoTBX(eg["term"]) #TerminoTBXSnomedo objektua itzultzen du
         term = termS.getTerminoa()
         if type(ordList) == type('kuku'):
             ord_lag = ord_h[ordList]
@@ -136,10 +136,15 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
                 ordList = itzulSpHash.get(term.lower())
         else:
             print(ordList)
-        konTBX = snomed.getKontzeptu(eg["konTBX"][1:])
+        konTBX = snomed.getKontzeptuTBX(eg["konTBX"][1:])
+        if not konTBX:
+            print(hie,eg)
+            print(eg["konTBX"])
 
-        konTBX.eguneratu(ordList,term,eg['ema'],eg['zb'])
+        konTBX.eguneratu(ordList,termS.term,eg['ema'],eg['zb']) #termS.term erabili behar da, kontutan izan nTig objektua bera berreskuratu nahi dugula
         lexentzat(ordList,gehitzeko,term.replace(' ','_'))
+
+    lexenEguneratzea(gehitzeko,hie)
 
     if tok_kop == i_max:
         with codecs.open(path+'/tartekoak/'+hie+'_bai_eng.txt','w',encoding='utf-8') as fitx:
@@ -234,7 +239,7 @@ def main(argv):
             adj_hiz = {}
             kat_hiz = {}
         #results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,deepcopy(snomed),itzulDBeng,itzulEnHash,itzulSpHash,emFitx,emaitzak,lock,adj_hiz,kat_hiz)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
-        results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,snomed,itzulEnHash,itzulSpHash)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
+        results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,snomed,itzulEnHash,itzulSpHash)) for hie in ["SOCIAL","ORGANISM","ENVIRONMENT","SUBSTANCE","QUALIFIER","PHARMPRODUCT","PROCEDURE","BODYSTRUCTURE","FINDING"] ]#Hierarkia_RF2_izen//probak
         output = [p.get() for p in results]
         for em,hi in output:
             emaitzak[hi] = em
