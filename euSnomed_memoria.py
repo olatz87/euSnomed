@@ -23,7 +23,7 @@ from copy import deepcopy
 from lxml import etree as ET
 
 
-def lexenEguneratzea(gehitzeko,hie):
+def lexenEguneratzea(gehitzeko,hie,tok_kop):
     print("Lex-ak eguneratuko dira",hie.lower(),len(gehitzeko))
     if len(gehitzeko)>0:
         flex_ize = "scriptak/foma/lex/"+hie.lower()+'.lex'
@@ -86,7 +86,7 @@ def lexentzat(ordList,gehitzeko,termLag):
 
 
 #@profile
-def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,snomed,itzulEnHash,itzulSpHash):
+def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,snomed,itzulEnHash,itzulSpHash,lock):
     tf_emaitzak = tempfile.NamedTemporaryFile(delete=False)
     pickle.dump(emaitzak,tf_emaitzak)
     tf_adj_hiz = tempfile.NamedTemporaryFile(delete=False)
@@ -116,6 +116,7 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
             snomed.kargatu(hie)
     else:
         snomed.kargatu(hie,'_ald')
+
     gehitzeko = {}
     for eg in egun:
         ordList = eg['ordList']
@@ -126,25 +127,27 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
             ap = ''
             if "apl_patroiak" in ord_lag:
                 ap = ord_lag["apl_patroiak"]
-
+            lock.acquire()
             ordList = itzulDBeng.gehitu(ord_lag['ordList'],term,ord_lag['entrySource'],ord_lag['caseSig'],ord_lag['pOS'],ord_lag['tT'],ord_lag['rC'],ap)
             itzulEnHash[term] = ordList
+            lock.release()
         elif type(ordList) == type(1):
+            lock.acquire()
             if ordList == 0:
                 ordList = itzulEnHash.get(term.lower())
             else:
                 ordList = itzulSpHash.get(term.lower())
+            lock.release()
         else:
             print(ordList)
         konTBX = snomed.getKontzeptuTBX(eg["konTBX"][1:])
         if not konTBX:
-            print(hie,eg)
-            print(eg["konTBX"])
+            print("EZ DAKIT ZER GERTATZEN DEN!!",hie,eg)
 
         konTBX.eguneratu(ordList,termS.term,eg['ema'],eg['zb']) #termS.term erabili behar da, kontutan izan nTig objektua bera berreskuratu nahi dugula
         lexentzat(ordList,gehitzeko,term.replace(' ','_'))
 
-    lexenEguneratzea(gehitzeko,hie)
+    lexenEguneratzea(gehitzeko,hie,tok_kop)
 
     if tok_kop == i_max:
         with codecs.open(path+'/tartekoak/'+hie+'_bai_eng.txt','w',encoding='utf-8') as fitx:
@@ -216,6 +219,7 @@ def main(argv):
     #i_max = 4
     pat_app = {}
     pool = ThreadPool(processes=6)
+    lock = Lock()
     for tok_kop in range(i_min,i_max): #Kontuz!!! i_min inkrementatu dut!!!
         print("Itzulpena hasiko da: "+str(tok_kop)+" tokenetarako")  
 
@@ -239,7 +243,7 @@ def main(argv):
             adj_hiz = {}
             kat_hiz = {}
         #results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,deepcopy(snomed),itzulDBeng,itzulEnHash,itzulSpHash,emFitx,emaitzak,lock,adj_hiz,kat_hiz)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
-        results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,snomed,itzulEnHash,itzulSpHash)) for hie in ["SOCIAL","ORGANISM","ENVIRONMENT","SUBSTANCE","QUALIFIER","PHARMPRODUCT","PROCEDURE","BODYSTRUCTURE","FINDING"] ]#Hierarkia_RF2_izen//probak
+        results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,deepcopy(snomed),itzulEnHash,itzulSpHash,lock)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
         output = [p.get() for p in results]
         for em,hi in output:
             emaitzak[hi] = em

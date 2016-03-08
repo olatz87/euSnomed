@@ -95,34 +95,38 @@ class SnomedTBX:
         if not pre and syn:
             pre = syn.pop(0)
         if pre:
+            if "900000000000020002" == pre["initialCapitalStatus"]:
+                cS = 'InitialInsensitive'
+                pre["term"] = pre["term"][0].lower()+pre["term"][1:]
+            elif '900000000000017005' == pre["initialCapitalStatus"]:
+                cS = 'Sensitive'
+            else:
+                cS = 'Insensitive'
+                pre["term"] = pre["term"].lower()
             ntig = ET.SubElement(langSet,'ntig',id=hizk+pre["descriptionId"])
             termGrp = ET.SubElement(ntig,'termGrp')
             term = ET.SubElement(termGrp,'term').text = pre["term"]
             termNote = ET.SubElement(termGrp,'termNote',type='administrativeStatus').text = 'preferredTerm-adm-sts'
             sortKey = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(pre["term"])
             #workStatus = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'importedElement'
-            if "900000000000020002" == pre["initialCapitalStatus"]:
-                cS = 'InitialInsensitive'
-            elif '900000000000017005' == pre["initialCapitalStatus"]:
-                cS = 'Sensitive'
-            else:
-                cS = 'Insensitive'
             usageNote = ET.SubElement(termGrp,'termNote',type='usageNote').text = cS
 
         #print(syn)
         for syn1 in syn:
+            if CaseSignificance['InitialInsensitive'] == syn1["initialCapitalStatus"]:
+                cS = 'InitialInsensitive'
+                syn1["term"] = syn1["term"][0].lower()+syn1["term"][1:]
+            elif CaseSignificance['Sensitive'] == syn1["initialCapitalStatus"]:
+                cS = 'Sensitive'
+            else:
+                cS = 'Insensitive'
+                syn1["term"] = syn1["term"].lower()
             ntig = ET.SubElement(langSet,'ntig',id=hizk+syn1["descriptionId"])
             termGrp = ET.SubElement(ntig,'termGrp')
             term = ET.SubElement(termGrp,'term').text = syn1["term"]
             termNote = ET.SubElement(termGrp,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
             sortKey = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(syn1["term"])
             #workStatus = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'importedElement'
-            if CaseSignificance['InitialInsensitive'] == syn1["initialCapitalStatus"]:
-                cS = 'InitialInsensitive'
-            elif CaseSignificance['Sensitive'] == syn1["initialCapitalStatus"]:
-                cS = 'Sensitive'
-            else:
-                cS = 'Insensitive'
             usageNote = ET.SubElement(termGrp,'termNote',type='usageNote').text = cS
         return langSet
 

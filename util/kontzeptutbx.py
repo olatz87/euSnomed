@@ -24,6 +24,7 @@ class KontzeptuTBX:
         return self.kontzeptu.findtext('descrip[@type="definition"]')
 
     def getPreferredTerm(self,hizkuntza):
+        # TODO: ez dabil. termGrp barruan dago
         for terminoa in self.getTerminoak(hizkuntza):
             for child in terminoa: 
                 if child.tag == 'termNote' and child.get('type') == 'administrativeStatus' and child.text == 'preferredTerm-adm-sts':
