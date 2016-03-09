@@ -326,7 +326,7 @@ class RelationshipList():
                         self.umeZerrenda[r["conceptId2"]] = helmugaSet
 
     #kontzeptuak hierarkiaka banatzeko funtzio errekurtsiboa
-    def jasoErrek(self,setOna,hie):
+    def jasoErrek(self,setOna,hie,hiz):
         if setOna:
             if hie == "FINDING" and "64572001" in setOna:
                 print("disorder finding-etik kenduta")
@@ -336,17 +336,38 @@ class RelationshipList():
                     if hie not in self.hierarkiak[lag]:
                         fsn = self.konZer.sct2fsn(lag)
                         hieLag = hie.lower()
+                        hieLag_es = hie.lower()
                         hieLagZ = self.hierarkiak[lag].lower()
+                        hieLagZ_es = self.hierarkiak[lag].lower()
                         if hieLag == "pharmproduct":
-                            hieLag = "product"
+                            if hiz == "es":
+                                hieLag = "producto"
+                            else:
+                                hieLag = "product"
+                        elif hieLag == "disorder":
+                            if hiz == "es":
+                                hieLag = "trastorno"
+                        elif hieLag == "finding":
+                            if hiz == "es":
+                                hieLag = "hallazgo"
                         if hieLagZ == "pharmproduct":
-                            hieLagZ = "product"
-                        if fsn.endswith("("+hieLag+")"):
+                            if hiz == "es":
+                                hieLag = "producto"
+                            else:
+                                hieLagZ = "product"
+                        elif hieLagZ == "disorder":
+                            if hiz == "es":
+                                hieLagZ = "trastorno"
+                        elif hieLagZ == "finding":
+                            if hiz == "es":
+                                hieLagZ = "hallazgo"
+
+                        if fsn.endswith("("+hieLag+")") :
                             self.hierarkiak[lag] = hie
                             self.banaketa[hie].append(lag)
                             hur = self.umeZerrenda.get(lag,None)
-                            self.jasoErrek(hur,hie)
-                        elif fsn.endswith("("+hieLagZ+")"):
+                            self.jasoErrek(hur,hie,hiz)
+                        elif fsn.endswith("("+hieLagZ+")") :
                             continue
                         else:
                             print("Kontzeptu berdina bi hierarkiatan aurkitzen da "+fsn+" "+self.hierarkiak[lag]+" vs "+hie)
@@ -355,11 +376,11 @@ class RelationshipList():
                     self.hierarkiak[lag] = hie
                     self.banaketa[hie].append(lag)
                     hur = self.umeZerrenda.get(lag,None)
-                    self.jasoErrek(hur,hie)
+                    self.jasoErrek(hur,hie,hiz)
 
 
 
-    def hierarkiakEsleitu(self):
+    def hierarkiakEsleitu(self,hiz="en"):
         self.hierarkiak = {}
         self.banaketa = {}
         if self.rf == 1:
@@ -369,7 +390,7 @@ class RelationshipList():
         for hie in Hierarkia:
             setOna = self.umeZerrenda[Hierarkia[hie][1]]
             self.banaketa[hie] = [Hierarkia[hie][1]]
-            self.jasoErrek(setOna,hie)
+            self.jasoErrek(setOna,hie,hiz)
             self.hierarkiak[Hierarkia[hie][1]]=hie        
         self.hierarkiak["138875005"] = "SNOMED CT Concept"
         self.konZer.setHieBanaketa(self.banaketa)

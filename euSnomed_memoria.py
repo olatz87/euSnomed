@@ -86,7 +86,7 @@ def lexentzat(ordList,gehitzeko,termLag):
 
 
 #@profile
-def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,snomed,itzulEnHash,itzulSpHash,lock):
+def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,itzulEnHash,itzulSpHash,lock):
     tf_emaitzak = tempfile.NamedTemporaryFile(delete=False)
     pickle.dump(emaitzak,tf_emaitzak)
     tf_adj_hiz = tempfile.NamedTemporaryFile(delete=False)
@@ -109,6 +109,8 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
     tf_egun.close()
     tf_ord_h.close()
     tf_ema.close()
+
+    snomed = Snomed(False,path)
     if tok_kop == i_min:
         if i_min > 1:
             snomed.kargatu(hie,"_ald")
@@ -148,7 +150,7 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
         lexentzat(ordList,gehitzeko,term.replace(' ','_'))
 
     lexenEguneratzea(gehitzeko,hie,tok_kop)
-
+    snomed = None
     if tok_kop == i_max:
         with codecs.open(path+'/tartekoak/'+hie+'_bai_eng.txt','w',encoding='utf-8') as fitx:
             fitx.write(ema.getTerminoak('en','bai'))
@@ -243,7 +245,7 @@ def main(argv):
             adj_hiz = {}
             kat_hiz = {}
         #results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,deepcopy(snomed),itzulDBeng,itzulEnHash,itzulSpHash,emFitx,emaitzak,lock,adj_hiz,kat_hiz)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
-        results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,deepcopy(snomed),itzulEnHash,itzulSpHash,lock)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
+        results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,itzulEnHash,itzulSpHash,lock)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
         output = [p.get() for p in results]
         for em,hi in output:
             emaitzak[hi] = em
