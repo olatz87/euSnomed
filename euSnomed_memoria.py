@@ -27,7 +27,7 @@ def lexenEguneratzea(gehitzeko,hie,tok_kop):
     print("Lex-ak eguneratuko dira",hie.lower(),len(gehitzeko))
     if len(gehitzeko)>0:
         flex_ize = "scriptak/foma/lex/"+hie.lower()+'.lex'
-        with codecs.open(flex_ize) as flex:
+        with codecs.open(flex_ize,encoding="utf-8") as flex:
             fList = flex.readlines()[:-1]
             for eng,eusak in gehitzeko.items():
                 for ordT in eusak:

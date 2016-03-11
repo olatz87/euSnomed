@@ -187,7 +187,9 @@ class ItzulDB:
                             self.hashSet(engH,eng,eus,'Anatomia',cS,pOS,tT,9,zbEng)
                 if (hizkuntza >= 1):
                     for spa in spaak:
+                        spa = spa.replace(';','')
                         for eus in eusak:
+                            eus = eus.replace(';','')
                             cS = 'Unknown'
                             pOS = set()
                             pOS.add('Izen')
