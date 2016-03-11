@@ -147,7 +147,8 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
             print("EZ DAKIT ZER GERTATZEN DEN!!",hie,eg)
 
         konTBX.eguneratu(ordList,termS.term,eg['ema'],eg['zb']) #termS.term erabili behar da, kontutan izan nTig objektua bera berreskuratu nahi dugula
-        lexentzat(ordList,gehitzeko,term.replace(' ','_'))
+        if ordList != 1:
+            lexentzat(ordList,gehitzeko,term.replace(' ','_'))
 
     lexenEguneratzea(gehitzeko,hie,tok_kop)
     snomed = None
