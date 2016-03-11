@@ -32,6 +32,8 @@ def lexenEguneratzea(gehitzeko,hie,tok_kop):
             for eng,eusak in gehitzeko.items():
                 for ordT in eusak:
                     eus = ordT.getKarKatea()
+                    if eus[-1] == ";":
+                        eus = eus[:-1]
                     pos = ordT.getPOS()
                     posE = ""
                     if hie == "QUALIFIER":
