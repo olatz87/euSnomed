@@ -7,7 +7,7 @@ from lxml import etree as ET
 
 class ItzulDB:
     
-    def edbl2enum(self,kat,azpkat):
+    def edbl2enum(self,kat,azpKat):
         pOs = set()
         if kat == "IZE":
             if azpKat[:3] == "LIB" or azpKat[:2] == "IB" :
@@ -36,16 +36,13 @@ class ItzulDB:
             key = key.replace('Ã©','é')
             key = key.replace('Ãº','ú')
         key = key.lower()
-        if value == "kroniko":
-            print("kroniko")
-            print(key,value,itur,caseSig,pOs,termType,rC,sw)
-
         if key not in sw:
             key = key.encode('utf-8')
             if caseSig == 'Unknown':
                 value = value.lower()
             elif caseSig == 'InitialInsensitive':
                 value = value[0].lower()+value[1:]
+            value_or = value.strip()
             value = value.strip().encode('utf-8')
             ordainList = hasha.get(key,{})
             if itur == 'Elhuyar' and ordainList:
@@ -57,26 +54,27 @@ class ItzulDB:
                 for katea in ordainList:
                     if v_lag == katea:
                         value = katea
+
             if not pOs:
-                if value in self.itzTBX.adj_hiz:
+                if value_or in self.itzTBX.adj_hiz:
                     #TODO: aztertu \t agertu behar den.
-                    if "IZLK" in self.itzTBX.adj_hiz[value]:
+                    if "IZLK" in self.itzTBX.adj_hiz[value_or]:
                         pOs.add("Izenlagun")
                     else:
                         pOs.add("Izenondo")
-                elif value in self.itzTBX.kat_hiz:
-                    kat = self.itzTBX.kat_hiz[value].split("\t")[3]
-                    azpKat = self.itzTBX.kat_hiz[value].split("\t")[4]
+                elif value_or in self.itzTBX.kat_hiz:
+                    kat = self.itzTBX.kat_hiz[value_or].split("\t")[0]
+                    azpKat = self.itzTBX.kat_hiz[value_or].split("\t")[1]
                     pOs = self.edbl2enum(kat,azpKat)
             elif "Adjektibo" in pOs:
-                if value in self.itzTBX.adj_hiz:
+                if value_or in self.itzTBX.adj_hiz:
                     pOs.remove("Adjektibo")
-                    if "IZLK" in self.itzTBX.adj_hiz[value]:
+                    if "IZLK" in self.itzTBX.adj_hiz[value_or]:
                         pOs.add("Izenlagun")
                     else:
                         pOs.add("Izenondo")
                 else:
-                    if len(value)> 3 and ((value[-2:] in [b"ko",b"go"] and value[-3] != b"i") or value[-3:] == b"ren"):
+                    if len(value_or)> 3 and ((value_or[-2:] in [b"ko",b"go"] and value_or[-3] != b"i") or value_or[-3:] == b"ren"):
                         pOs.add("Izenlagun")
                     else:
                         pOs.add("Izenondo")
