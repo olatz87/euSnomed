@@ -1,7 +1,7 @@
 #!/soft_orokorra_linux_x86_64/python-3.4.2/bin/python3
 # -*- coding: utf-8 -*-
 
-import sys,os,getopt,datetime,codecs,threading,subprocess,gc,pickle,tempfile
+import sys,os,getopt,datetime,codecs,threading,subprocess,gc,pickle,tempfile,argparse
 from util.itzuldb import ItzulDB
 from util.enumeratuak import Hierarkia,Hierarkia_RF2,Hierarkia_RF2_probak,Hierarkia_RF2_izen
 from util.emaitzak import Emaitzak
@@ -170,28 +170,28 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
 
 
 #@profile
-def main(argv):
-    path = '../../euSnomed/'
-    snoBool = False
-    itzulBool = False
-    lexBool = False
-    try:
-        opts, args = getopt.getopt(argv,"hp:s:i:l",["path=","snomed=","itzuldb=","lex"])
-    except getopt.GetoptError:
-        print('python3 euSnomed.py -p <path> -s <snomedBool> -i <itzulDBBool>')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt =='-h':
-            print('python3 euSnomed.py -p <path> -s -i -l ')
-            sys.exit()
-        elif opt in ("-p","--path"):
-            path = arg
-        elif opt in ("-i","--itzuldb"):
-            itzulBool = True
-        elif opt in ('-s','--snomed'):
-            snoBool = True
-        elif opt in ('-l','--lex'):
-            lexBool = True
+def main(args):
+    path = args.path #'../../euSnomed/'
+    snoBool = args.snomed # False
+    itzulBool = args.itzuldb # False
+    lexBool = args.lex #False
+    # try:
+    #     opts, args = getopt.getopt(argv,"hp:s:i:l",["path=","snomed=","itzuldb=","lex"])
+    # except getopt.GetoptError:
+    #     print('python3 euSnomed.py -p <path> -s <snomedBool> -i <itzulDBBool>')
+    #     sys.exit(2)
+    # for opt, arg in opts:
+    #     if opt =='-h':
+    #         print('python3 euSnomed.py -p <path> -s -i -l ')
+    #         sys.exit()
+    #     elif opt in ("-p","--path"):
+    #         path = arg
+    #     elif opt in ("-i","--itzuldb"):
+    #         itzulBool = True
+    #     elif opt in ('-s','--snomed'):
+    #         snoBool = True
+    #     elif opt in ('-l','--lex'):
+    #         lexBool = True
     hizkuntza = 2
 
     snomed = Snomed(snoBool,path)
@@ -266,5 +266,11 @@ def main(argv):
     #with open(emFitx) as fem:
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    parser = argparse.ArgumentParser(description="deskribapenak.tsv fitxategietatik taulak ateratzeko.")
+    parser.add_argument('-p',"--path",help="baliabideen patha",required = True)
+    parser.add_argument('-i','--itzuldb',help="itzuldb hasieratu",action="store_true")
+    parser.add_argument('-s','--snomed',help="snomed hasieratu",action="store_true")
+    parser.add_argument('-l','--lex',help="lexak hasieratu",action="store_true")
+    args = parser.parse_args()
+    main(args)
 
