@@ -36,7 +36,9 @@ class ItzulDB:
             key = key.replace('Ã©','é')
             key = key.replace('Ãº','ú')
         key = key.lower()
-        if key not in zb:
+        if key in zb and value in zb[key]:
+            pass
+        else:
             key = key.encode('utf-8')
             if caseSig == 'Unknown':
                 value = value.lower()
@@ -45,12 +47,15 @@ class ItzulDB:
             value = value.strip().encode('utf-8')
             ordainList = hasha.get(key,{})
             if itur == 'Elhuyar' and ordainList:
-                elBerria = False
                 for ket,ordain in ordainList.items():
                     if 'Elhuyar' not in ordain.getHiztegiZerrenda():
                         return None
+            # if itur == "GNS10" and ordainList:
+            #     for ket,ordain in ordainList.items():
+                    
             if not pOs:
                 if value in self.itzTBX.adj_hiz:
+                    #TODO: aztertu \t agertu behar den.
                     if "\tIZLK" in self.itzTBX.adj_hiz[value]:
                         pOs.add("Izenlagun")
                     else:
@@ -205,6 +210,9 @@ class ItzulDB:
                 spa = ordainak[2].strip()
                 eusak = ordainak[3].strip().split('; ')
                 for eus in eusak:
+                    if '[' in eus:
+                        regex = re.compile('\[[^]]+?\]')
+                        eus = regex.sub('',eus)
                     cS = 'Unknown'
                     pOS = set()
                     tT = 'Unknown'
@@ -344,10 +352,18 @@ class ItzulDB:
                             if '(' in lag:
                                 regex = re.compile('\([^)]+?\)')
                                 lag = regex.sub('',lag)
+                            ordinal = False
+                            ordinal_suff = ["first","second","third","fourth","fifth","seventh","eighth","ninth","tenth","eleventh","twelfth","teenth","tieth","hundredth","thousandth","milionth"]
+                            if eng.endswith(tuple(ordinal_suff)) and "garren" in lag:
+                                ordinal = True
                             eusak = re.split(',|;',lag)
                             for eus in eusak:
+
                                 if '/' in eus or '...' in eus or eus[-1] == '-' or eus[0] == '-' or "+" in eus:
                                     continue
+                                if ordinal:
+                                    if not eus.endswith("garren"):
+                                        continue
                                 if '[' in eus:
                                     regex = re.compile('\[[^]]+?\]')
                                     eus = regex.sub('',eus)
@@ -560,15 +576,21 @@ class ItzulDB:
     def hasieratu(self,path,hizkuntza):
 
         with codecs.open(path+'zerrendaBeltzak/stopWords-en.txt',encoding='utf-8') as fitx:
-            zbEng = fitx.read().split('\n')
+            zbEng = {}
+            for line in fitx:
+                l_lag = line.strip().line.split("\n")
+                zbEng[l_lag[0]]=l_lag[1:]
+
         with codecs.open(path+'zerrendaBeltzak/stopWords-es.txt',encoding='utf-8') as fitx:
-            zbSpa = fitx.read().split('\n')
+            zbSpa = {}
+            for line in fitx:
+                l_lag = line.strip().line.split("\n")
+                zbSpa[l_lag[0]]=l_lag[1:]
+
         engH,spaH = self.zt2hash(path,hizkuntza,zbEng,zbSpa)
         print('ZT',len(engH),len(spaH))
         self.anatomia2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
         print('+Anatomia',len(engH),len(spaH))
-        self.gns2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
-        print('+GNS10',len(engH),len(spaH))
         self.euskalterm2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
         print('+Euskalterm',len(engH),len(spaH))
         if hizkuntza ==2:
@@ -586,6 +608,8 @@ class ItzulDB:
             #print('+Morfosemantika',len(engH),len(spaH))
             self.medikuak2Hash(path,engH,zbEng)
             print('+Medikuak',len(engH),len(spaH))
+        self.gns2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
+        print('+GNS10',len(engH),len(spaH))
         self.elhuyar2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
         print('+Elhuyar',len(engH),len(spaH))
         return engH,spaH
