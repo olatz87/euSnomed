@@ -50,9 +50,11 @@ class ItzulDB:
                 for ket,ordain in ordainList.items():
                     if 'Elhuyar' not in ordain.getHiztegiZerrenda():
                         return None
-            # if itur == "GNS10" and ordainList:
-            #     for ket,ordain in ordainList.items():
-                    
+            if itur == "GNS10" and ordainList and value[-1] == 'a':
+                v_lag = value[:-1]
+                for katea in ordainList:
+                    if v_lag == katea:
+                        value = katea
             if not pOs:
                 if value in self.itzTBX.adj_hiz:
                     #TODO: aztertu \t agertu behar den.
