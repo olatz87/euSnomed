@@ -6,7 +6,7 @@ import unidecode,codecs
 
 class ItzulDBTBX:
 
-    def adjKargatu (self,path):
+    def adjKargatu(self,path):
         self.adj_hiz = {}
         with codecs.open(path+"/baliabideak/edbl_adjektiboak.txt",encoding= "iso-8859-1") as adjf:
             lerroak = adjf.readlines()
