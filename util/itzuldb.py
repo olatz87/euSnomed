@@ -26,7 +26,7 @@ class ItzulDB:
         return pOs
         
     
-    def hashSet(self,hasha,key,value,itur,caseSig,pOs,termType,rC,zb):
+    def hashSet(self,hasha,key,value,itur,caseSig,pOs,termType,rC,sw):
         key = key.strip()
         if 'Ã' in key :
             has = key
@@ -36,9 +36,11 @@ class ItzulDB:
             key = key.replace('Ã©','é')
             key = key.replace('Ãº','ú')
         key = key.lower()
-        if key in zb and value in zb[key]:
-            pass
-        else:
+        if value == "kroniko":
+            print("kroniko")
+            print(key,value,itur,caseSig,pOs,termType,rC,sw)
+
+        if key not in sw:
             key = key.encode('utf-8')
             if caseSig == 'Unknown':
                 value = value.lower()
@@ -58,7 +60,7 @@ class ItzulDB:
             if not pOs:
                 if value in self.itzTBX.adj_hiz:
                     #TODO: aztertu \t agertu behar den.
-                    if "\tIZLK" in self.itzTBX.adj_hiz[value]:
+                    if "IZLK" in self.itzTBX.adj_hiz[value]:
                         pOs.add("Izenlagun")
                     else:
                         pOs.add("Izenondo")
@@ -69,7 +71,7 @@ class ItzulDB:
             elif "Adjektibo" in pOs:
                 if value in self.itzTBX.adj_hiz:
                     pOs.remove("Adjektibo")
-                    if "\tIZLK" in self.itzTBX.adj_hiz[value]:
+                    if "IZLK" in self.itzTBX.adj_hiz[value]:
                         pOs.add("Izenlagun")
                     else:
                         pOs.add("Izenondo")
@@ -86,7 +88,7 @@ class ItzulDB:
             hasha[key]=ordainList
       
       
-    # def zt2hashXML(self,path,hizkuntza,zbEng,zbSpa):
+    # def zt2hashXML(self,path,hizkuntza,swEng,swSpa):
     #     ztEng = {}
     #     ztSpa = {}
     #     ztGaiak = ['Zool.','Anat.','Med.','Fisiol.','Mikrob.','Biokim.','Biol.','Psikiat.','Genet.','Fisiol.']
@@ -97,7 +99,7 @@ class ItzulDB:
     #     for tE in erroa.findall('body/termEntry'):
             
 
-    def zt2hash(self,path,hizkuntza,zbEng,zbSpa):
+    def zt2hash(self,path,hizkuntza,swEng,swSpa):
         ztEng = {}
         ztSpa = {}
         ztGaiak = ['Zool.','Anat.','Med.','Fisiol.','Mikrob.','Biokim.','Biol.','Psikiat.','Genet.','Fisiol.']
@@ -137,16 +139,16 @@ class ItzulDB:
                         engAk = ordainak[3].strip().split(';')
                         for eng in engAk:
                             if '?' not in eng:
-                                self.hashSet(ztEng,eng,eus,'ZT',cS,pOS,tT,9,zbEng)
+                                self.hashSet(ztEng,eng,eus,'ZT',cS,pOS,tT,9,swEng)
                     if hizkuntza >=1:
                         spaAk = ordainak[5].strip().split(';')
                         for spaLag in spaAk:
                             spa = spaLag.split(', -')[0]
-                            self.hashSet(ztSpa,spa,eus,'ZT',cS,pOS,tT,9,zbSpa)
+                            self.hashSet(ztSpa,spa,eus,'ZT',cS,pOS,tT,9,swSpa)
 #        print(ztEng,ztSpa)
         return ztEng,ztSpa
         
-    def anatomia2hash(self,path,hizkuntza,engH,spaH,zbEng,zbSpa):
+    def anatomia2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
         with codecs.open(path+'/baliabideak/anatomia.txt',encoding='utf-8') as fitx:
             fitxategia = fitx.readlines()
             i = 5 
@@ -191,7 +193,7 @@ class ItzulDB:
                             pOS = set()
                             pOS.add('Izen')
                             tT = 'Unknown'
-                            self.hashSet(engH,eng,eus,'Anatomia',cS,pOS,tT,9,zbEng)
+                            self.hashSet(engH,eng,eus,'Anatomia',cS,pOS,tT,9,swEng)
                 if (hizkuntza >= 1):
                     for spa in spaak:
                         spa = spa.replace(';','')
@@ -201,9 +203,9 @@ class ItzulDB:
                             pOS = set()
                             pOS.add('Izen')
                             tT = 'Unknown'
-                            self.hashSet(spaH,spa,eus,'Anatomia',cS,pOS,tT,9,zbSpa)
+                            self.hashSet(spaH,spa,eus,'Anatomia',cS,pOS,tT,9,swSpa)
                                     
-    def gns2hash(self,path,hizkuntza,engH,spaH,zbEng,zbSpa):
+    def gns2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
         with codecs.open(path+'/baliabideak/gns10garbi6.txt',encoding='utf-8') as fitx:
             tsvin = csv.reader(fitx,delimiter='\t')
             for ordainak in tsvin:
@@ -219,19 +221,19 @@ class ItzulDB:
                     pOS = set()
                     tT = 'Unknown'
                     if (hizkuntza == 0 or hizkuntza == 2) and eng and eus:
-                        self.hashSet(engH,eng,eus,'GNS10',cS,pOS,tT,5,zbEng)
+                        self.hashSet(engH,eng,eus,'GNS10',cS,pOS,tT,5,swEng)
                     if hizkuntza >= 1 and spa and eus:
-                        self.hashSet(spaH,spa,eus,'GNS10',cS,pOS,tT,5,zbSpa)
+                        self.hashSet(spaH,spa,eus,'GNS10',cS,pOS,tT,5,swSpa)
 
-    def erizaintza2hash(self,path,hizkuntza,engH,spaH,zbEng,zbSpa):
+    def erizaintza2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
         if hizkuntza == 0:
             hasha = engH
             fitx = path+'/baliabideak/erizaintza_en-eu.txt'
-            zb = zbEng
+            sw = swEng
         else:
             hasha = spaH
             fitx = path+'/baliabideak/erizaintza_es-eu.txt'
-            zb = zbSpa
+            sw = swSpa
         with codecs.open(fitx,encoding='utf-8') as fit:
             for sarrera in fit:
                 if ':' in sarrera:
@@ -250,9 +252,9 @@ class ItzulDB:
                                 cS = 'Sensitive'
                             else:
                                 eus = eus.lower()
-                            self.hashSet(hasha,terminoa,eus,'Erizaintza',cS,pOS,tT,7,zb)
+                            self.hashSet(hasha,terminoa,eus,'Erizaintza',cS,pOS,tT,7,sw)
                             
-    def euskalterm2hash(self,path,hizkuntza,engH,spaH,zbEng,zbSpa):
+    def euskalterm2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
         fitx = path+'/baliabideak/euskaltermOsoa2.txt'
         with codecs.open(fitx,encoding='iso-8859-15') as fit:
             tsvin = csv.reader(fit,delimiter='\t')
@@ -300,7 +302,7 @@ class ItzulDB:
                                         tT = 'Acronym'
                                 if eng[-1] != '.' and eus[-1] == '.':
                                     eus = eus[:-1]
-                                self.hashSet(engH,eng,eus,'EuskalTerm',cS,pos,tT,8,zbEng)
+                                self.hashSet(engH,eng,eus,'EuskalTerm',cS,pos,tT,8,swEng)
                     if spaak[0] != '':
                         for spa in spaak:
                             pos = set()
@@ -330,9 +332,9 @@ class ItzulDB:
                                     pos.add('IzenBerezi')
                                     if eus.isupper():
                                         tT = 'Acronym'
-                                self.hashSet(spaH,spa,eus,'EuskalTerm',cS,pos,tT,8,zbSpa)
+                                self.hashSet(spaH,spa,eus,'EuskalTerm',cS,pos,tT,8,swSpa)
 
-    def elhuyar2hash(self,path,hizkuntza,engH,spaH,zbEng,zbSpa):
+    def elhuyar2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
         if hizkuntza == 0 or hizkuntza == 2: #ingelesa
             with codecs.open(path+'baliabideak/HN_N_bakuna_opentrad_utf8.txt',encoding='utf-8') as fitx:
                 for sarrera in fitx:
@@ -400,7 +402,7 @@ class ItzulDB:
                                     pos.add('Aditzondo')
                                 if not pos:
                                     pos.add('Besterik')
-                                self.hashSet(engH,eng,eus,'Elhuyar',cS,pos,tT,7,zbEng)
+                                self.hashSet(engH,eng,eus,'Elhuyar',cS,pos,tT,7,swEng)
         if hizkuntza > 1:#gaztelania
             with codecs.open(path+'baliabideak/Elhuyar_es_eu-utf8.txt',encoding='utf-8') as fitx:
                 for sarrera in fitx:
@@ -455,11 +457,11 @@ class ItzulDB:
                                     pos.add('Aditzondo')
                                 if not pos:
                                     pos.add('Besterik')
-                                self.hashSet(spaH,spa,eus,'Elhuyar',cS,pos,tT,7,zbSpa)
+                                self.hashSet(spaH,spa,eus,'Elhuyar',cS,pos,tT,7,swSpa)
 
                             
                         
-    def adminSan2hash(self,path,spaH,zbSpa):
+    def adminSan2hash(self,path,spaH,swSpa):
         with codecs.open(path+'baliabideak/adm_san.txt',encoding='utf-8') as fitx:
             while True:
                 spa = fitx.readline().strip()
@@ -492,9 +494,9 @@ class ItzulDB:
                         spa = regex.sub('',spa)
                     if '(' in eus:
                         eus = regex.sub('',eus)
-                    self.hashSet(spaH,spa,eus,'AdminSan',cS,pos,tT,8,zbSpa)
+                    self.hashSet(spaH,spa,eus,'AdminSan',cS,pos,tT,8,swSpa)
 
-    def morfo2Hash(self,path,engH,zbEng):
+    def morfo2Hash(self,path,engH,swEng):
         with codecs.open(path+'baliabideak/morfoHiztegia.txt',encoding='utf-8') as fitx:
             for line in fitx:
                 line = line.strip()
@@ -506,9 +508,9 @@ class ItzulDB:
                         us = "Sensitive"
                     else:
                         us = "InitialInsensitive"
-                    self.hashSet(engH,eng,eus,'Morfologia',us,set(['Izen']),'TranscribedForm',7,zbEng)
+                    self.hashSet(engH,eng,eus,'Morfologia',us,set(['Izen']),'TranscribedForm',7,swEng)
 
-    def medikuak2Hash(self,path,engH,zbEng):
+    def medikuak2Hash(self,path,engH,swEng):
         with codecs.open(path+'baliabideak/felixenPareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
                 line = line.strip()
@@ -526,7 +528,7 @@ class ItzulDB:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    self.hashSet(engH,eng,eus[1:-1],'Medikuak',cS,set(['Izen']),'',9,zbEng)
+                    self.hashSet(engH,eng,eus[1:-1],'Medikuak',cS,set(['Izen']),'',9,swEng)
                     
         with codecs.open(path+'baliabideak/karlosenPareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
@@ -543,7 +545,7 @@ class ItzulDB:
                     cS = 'InitialInsensitive'
                     if eus[0].upper():
                         cS = 'Sensitive'
-                    self.hashSet(engH,eng,eus,'Medikuak',cS,set(['Izen']),'',9,zbEng)
+                    self.hashSet(engH,eng,eus,'Medikuak',cS,set(['Izen']),'',9,swEng)
 
         with codecs.open(path+'baliabideak/felixenBestePareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
@@ -558,7 +560,7 @@ class ItzulDB:
                     pos = set(['Izen'])
                     if len(lineLag) > 2:
                         pos = set([lineLag[2]])
-                    self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,zbEng)
+                    self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,swEng)
         
         with codecs.open(path+'baliabideak/karlosenBestePareak.txt',encoding='utf-8') as fitx:
             for line in fitx:
@@ -573,46 +575,39 @@ class ItzulDB:
                     pos = set(['Izen'])
                     if len(lineLag) > 2:
                         pos = set([lineLag[2]])
-                    self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,zbEng)
+                    self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,swEng)
 
     def hasieratu(self,path,hizkuntza):
 
         with codecs.open(path+'zerrendaBeltzak/stopWords-en.txt',encoding='utf-8') as fitx:
-            zbEng = {}
-            for line in fitx:
-                l_lag = line.strip().line.split("\n")
-                zbEng[l_lag[0]]=l_lag[1:]
-
+            swEng = fitx.read().split("\n")
         with codecs.open(path+'zerrendaBeltzak/stopWords-es.txt',encoding='utf-8') as fitx:
-            zbSpa = {}
-            for line in fitx:
-                l_lag = line.strip().line.split("\n")
-                zbSpa[l_lag[0]]=l_lag[1:]
+            swSpa = fitx.read().split("\n")
 
-        engH,spaH = self.zt2hash(path,hizkuntza,zbEng,zbSpa)
+        engH,spaH = self.zt2hash(path,hizkuntza,swEng,swSpa)
         print('ZT',len(engH),len(spaH))
-        self.anatomia2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
+        self.anatomia2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
         print('+Anatomia',len(engH),len(spaH))
-        self.euskalterm2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
+        self.euskalterm2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
         print('+Euskalterm',len(engH),len(spaH))
         if hizkuntza ==2:
-            self.erizaintza2hash(path,0,engH,spaH,zbEng,zbSpa)
-            self.erizaintza2hash(path,1,engH,spaH,zbEng,zbSpa)
+            self.erizaintza2hash(path,0,engH,spaH,swEng,swSpa)
+            self.erizaintza2hash(path,1,engH,spaH,swEng,swSpa)
             print('+Erizaintza',len(engH),len(spaH))
         else:
-            self.erizaintza2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
+            self.erizaintza2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
             print('+Erizaintza',len(engH),len(spaH))
         if hizkuntza >= 1:
-            self.adminSan2hash(path,spaH,zbSpa)
+            self.adminSan2hash(path,spaH,swSpa)
             print('+AdminSan',len(engH),len(spaH))
         if hizkuntza == 2 or hizkuntza == 0:
-            #self.morfo2Hash(path,engH,zbEng)
+            #self.morfo2Hash(path,engH,swEng)
             #print('+Morfosemantika',len(engH),len(spaH))
-            self.medikuak2Hash(path,engH,zbEng)
+            self.medikuak2Hash(path,engH,swEng)
             print('+Medikuak',len(engH),len(spaH))
-        self.gns2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
+        self.gns2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
         print('+GNS10',len(engH),len(spaH))
-        self.elhuyar2hash(path,hizkuntza,engH,spaH,zbEng,zbSpa)
+        self.elhuyar2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
         print('+Elhuyar',len(engH),len(spaH))
         return engH,spaH
     
