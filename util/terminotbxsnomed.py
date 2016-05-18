@@ -24,3 +24,6 @@ class TerminoTBXSnomed(TerminoTBX):
 
     def getKontzeptua(self):
         return self.term.getparent().getparent()
+
+    def getHizkuntza(self):
+        return self.getId()[:2]

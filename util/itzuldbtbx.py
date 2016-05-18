@@ -3,8 +3,21 @@
 #import xml.etree.ElementTree as ET
 from lxml import etree as ET
 import unidecode,codecs
+from datetime import date
 
 class ItzulDBTBX:
+
+    def transakzioInfoGehitu(self,termEntry,tr_type="importation"):
+        trG = termEntry.find("transacGrp")
+        if trG is not None:
+            #trG.find("transac").text = tr_type
+            trG.find("date").text = date.today().isoformat()
+        else:
+            trG = ET.SubElement(termEntry,"transacGrp")
+            #trT = ET.SubElement(trG,"transac",type="transactionType").text = tr_type
+            trD = ET.SubElement(trG,"date").text= date.today().isoformat()
+        return trG
+
 
     def adjKargatu(self,path):
         self.adj_hiz = {}
@@ -49,10 +62,11 @@ class ItzulDBTBX:
             hiz = 'en'
         elif hizkuntza == 1:
             hiz = 'es'
-        self.hizkuntza = hiz;
-        self.path = path;
-        self.entryIdAlt=0;
-        self.termIdAlt=0;
+        if type(hizkuntza) == type(2):
+            self.hizkuntza = hiz
+        self.path = path
+        self.entryIdAlt=0
+        self.termIdAlt=0
         
     def burukoaXMLItzulDB(self):
         header = ET.Element('martifHeader')
@@ -110,6 +124,7 @@ class ItzulDBTBX:
                 self.termIdAlt += 1
                 # if erd == "evening":
                 #     print("tig",ET.tounicode(tig,pretty_print=True))
+            trans = self.transakzioInfoGehitu(termEntry)
             self.entryIdAlt += 1
         return body
 
@@ -184,7 +199,7 @@ class ItzulDBTBX:
                 if tT != 'Unknown':
                     teTy = ET.SubElement(tig,'termNote',type='termType').text = tT
                 self.termIdAlt += 1
-
+            trans = self.transakzioInfoGehitu(termEntry)
         self.entryIdAlt += 1
         return langSet.findall('tig')
 
@@ -241,3 +256,15 @@ class ItzulDBTBX:
                 ordainak = termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/tig')
                 denak[jatTerm] = ordainak
         return denak
+
+
+    def fromPattern(self,pat):
+        """
+        pat patroi bat emanda, patroi hori erabiliz sortutako pareak itzultzen ditu.
+        """
+        pareak = []
+        for termEntry in self.erroa.findall('text/body/termEntry'):
+            if termEntry.findtext("langSet[@{http://www.w3.org/XML/1998/namespace}lang='eu']/tig/admin[@type='originatingDatabase']") == "|"+pat:
+                pareak.append(termEntry)
+        return pareak
+

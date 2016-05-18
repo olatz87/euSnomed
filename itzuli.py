@@ -177,7 +177,7 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
                     # lock.release()
                     # engHash[term] = ordList
                     # konTBX.eguneratu(ordList,terminoS.term,ema,zb)
-                    ord_lag = {'ordList':itzulpenak,'term':term,'entrySource':'Patroiak','caseSig':terminoS.getUsageNote(),'pOS':'TerminoKonplexu','tT':'','rC':6,'apl_patroiak':apl_patroiak}
+                    ord_lag = {'ordList':itzulpenak,'term':term,'entrySource':'Patroiak','caseSig':terminoS.getUsageNote(),'pOS':set(['TerminoKonplexu']),'tT':'','rC':6,'apl_patroiak':apl_patroiak}
                     #print(ord_lag)
                     ord_key = term+'-'+str(random.randrange(1,1000))
                     ord_hiztegia[ord_key]=ord_lag
@@ -243,7 +243,7 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,emFitx,emaitzak,adj_hiz,kat_hi
 
     egun,ord_hiz = itzuli(snomed,ema,path,engHash,spaHash,kodeak_en,kodeak_es,tok_kop,adj_hiz,kat_hiz)
     print(colored(hie+' itzulpena bukatuta. Aldaketak gordetzen...',"magenta"))
-    snomed.gorde()
+    #snomed.gorde()
     ema.setKontzeptuakItzulita(snomed.getItzulitakoKontzeptuKop())
     ema.setOrdainakItzulita(snomed.getItzulitakoOrdainKop())
     ema.setTerminoakItzulita(snomed.getItzulitakoTerminoKop())

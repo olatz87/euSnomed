@@ -140,8 +140,8 @@ def itzulpena(term,analisia):
             if itzul == "" or itzul == "+?":
                 continue
             itzul = itzul.strip()
-            if "&&&ADJK" in itzul or "&&&IZLK" in itzul:
-                if "&&&ADJK" in itzul: #Izenondoak
+            if ("&&&ADJK" in itzul or "&&&IZLK" in itzul):
+                if "&&&ADJK" in itzul and "ADJK+a+gatikako" not in itzul and "ADJK+ak_eragindako" not in itzul: #Izenondoak
                     jat = itzul.split(" ")
                     ordAld = []
                     i = 0
@@ -176,6 +176,7 @@ def itzulpena(term,analisia):
                     itzul = " ".join(ordAld)
                 else: #Izenlagunak
                     itzul = itzul.replace("&&&IZLK","")
+                    itzul = itzul.replace("&&&ADJK","")
             plus = False
             eig = False
             if " + " in itzul:
@@ -247,5 +248,6 @@ def main(argv):
     #print(idatz)
 
 if __name__ == "__main__":
-    print(main(sys.argv[1:])[0])
+    #print(main(sys.argv[1:])[0])
+    print(main(sys.argv[1:]))
 

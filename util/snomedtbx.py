@@ -10,6 +10,9 @@ from util.ordaintbxsnomed import OrdainTBXSnomed
 import re,unidecode,codecs,nltk
 #from analizatzaileak.analizatzailea_en import tokenizatu
 from util.klaseak import *
+
+from datetime import date
+
 class SnomedTBX:
     
 
@@ -22,6 +25,19 @@ class SnomedTBX:
             parser = ET.XMLParser(encoding='utf-8')
             tree = ET.parse(fitx,parser)
             self.erroa = tree.getroot()
+
+    def transakzioInfoGehitu(self,termEntry,tr_type="importation"):
+        trG = termEntry.find("transacGrp")
+        if trG is not None:
+            #trG.find("transac").text = tr_type
+            trG.find("date").text = date.today().isoformat()
+        else:
+            trG = ET.SubElement(termEntry,"transacGrp")
+            #trT = ET.SubElement(trG,"transac",type="transactionType").text = tr_type
+            trD = ET.SubElement(trG,"date").text= date.today().isoformat()
+        return trG
+
+
 
     def fitx2hash(self,fitxategia):
         hasha = {}

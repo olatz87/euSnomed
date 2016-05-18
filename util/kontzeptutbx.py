@@ -8,6 +8,7 @@ from util.ordaintbxsnomed import OrdainTBXSnomed
 from util.terminotbxsnomed import TerminoTBXSnomed
 from util.enumeratuak import Iturburua
 from copy import deepcopy
+from datetime import date
 
 class KontzeptuTBX:
     
@@ -36,7 +37,6 @@ class KontzeptuTBX:
         te = erroa.find('text/body/termEntry')
         return KontzeptuTBX(te)
         
-
     def eguneratuGNS(self,term, gnsID):
         term = term.strip()
         euLanSet = ET.SubElement(self.kontzeptu, 'langSet')
@@ -57,7 +57,8 @@ class KontzeptuTBX:
         termNote = ET.SubElement(tG,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
         uN = ET.SubElement(tG,'termNote',type='usageNote').text = 'Unknown'
         #Transaction informazioa hemen joango litzateke...
-        
+        trans = self.transakzioInfoGehitu(self.kontzeptu)
+
     def getTerminoak(self,hizkuntza):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
         return self.kontzeptu.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+hizkuntza+'"]/ntig',namespaces=namespace)
@@ -146,6 +147,8 @@ class KontzeptuTBX:
                 if orPat:
                     for orP in orPat:
                         orDa = ET.SubElement(ntig,"admin",type="originatingDatabase").text = orP
+                trans = self.transakzioInfoGehitu(self.kontzeptu,"origination")
+
         for i in range(-1,len(hizPar)-1):
             if hizPar[i+1]:
                 ema.gehiHiztegia(i+1,'pare',hizkuntza)

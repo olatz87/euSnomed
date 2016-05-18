@@ -16,3 +16,5 @@ class TBX:
     def getNormalizatua(self):
         return self.term.findtext('admin[@type="sortKey"]')
 
+
+        

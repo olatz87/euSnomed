@@ -25,6 +25,7 @@ class ItzulDB:
             pOs.add("Besterik")
         return pOs
         
+
     
     def hashSet(self,hasha,key,value,itur,caseSig,pOs,termType,rC,sw):
         key = key.strip()
@@ -49,11 +50,15 @@ class ItzulDB:
                 for ket,ordain in ordainList.items():
                     if 'Elhuyar' not in ordain.getHiztegiZerrenda():
                         return None
-            if itur == "GNS10" and ordainList and value[-1] == 'a':
-                v_lag = value[:-1]
+            if itur == "GNS10" and ordainList and value_or[-1] == 'a':
+                v_lag = value_or[:-1]
                 for katea in ordainList:
-                    if v_lag == katea:
+                    if v_lag == katea.decode("utf-8"):
                         value = katea
+                    elif v_lag.endswith("rr"):
+                        if v_lag[:-1] == katea.decode("utf-8"):
+                            value = katea
+                        
 
             if not pOs:
                 if value_or in self.itzTBX.adj_hiz:
@@ -66,6 +71,8 @@ class ItzulDB:
                     kat = self.itzTBX.kat_hiz[value_or].split("\t")[0]
                     azpKat = self.itzTBX.kat_hiz[value_or].split("\t")[1]
                     pOs = self.edbl2enum(kat,azpKat)
+                elif value_or.endswith("iko") and key.endswith(b"ic"):
+                    pOs = set(["Izenlagun"])
             elif "Adjektibo" in pOs:
                 if value_or in self.itzTBX.adj_hiz:
                     pOs.remove("Adjektibo")
@@ -253,12 +260,13 @@ class ItzulDB:
                             self.hashSet(hasha,terminoa,eus,'Erizaintza',cS,pOS,tT,7,sw)
                             
     def euskalterm2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
-        fitx = path+'/baliabideak/euskaltermOsoa2.txt'
-        with codecs.open(fitx,encoding='iso-8859-15') as fit:
+        #fitx = path+'/baliabideak/euskaltermOsoa2.txt'
+        fitx = path+'/baliabideak/euskalterm2015_dena.txt'
+        with codecs.open(fitx,encoding='utf-8') as fit:
             tsvin = csv.reader(fit,delimiter='\t')
             for sarrera in tsvin:
-                gaztelaniazkoak = sarrera[0].strip()
-                euskarazkoak = sarrera[1].strip()
+                gaztelaniazkoak = sarrera[1].strip()#Bertsio aldaketarekin aldatu dira!!!
+                euskarazkoak = sarrera[0].strip()
                 ingelesezkoak = sarrera[2].strip()
                 pattern = "Administrazio sanitarioa|Anfibioen izenak|Arnas aparatua|Arrainen izenak|Alderdi biologikoa|Biokimika|Biologia|Botanika|Digestio-aparatua|Ekologia|Fisika|Genetika|Hematologia|Kimika|Laborategia|Landareen izenak|Magnetismoa|Medikuntza|Mikrobiologia|Narrastien izenak|Oftalmologia|Oinarrizko partikulak|Oinarrisko psikologia|Optika|Ornogabeen izenak|Otorrinolaringologia|Pediatria|Psikobiologia|Psikologia|Sistema genitourinarioa|Termodinamika|Traumatologia|Ugaztunen izenak|Zirkulazio-aparatua|Zitologia|Zoologia"
                 if euskarazkoak and re.search(pattern,sarrera[4]):
@@ -356,7 +364,7 @@ class ItzulDB:
                                 lag = regex.sub('',lag)
                             ordinal = False
                             ordinal_suff = ["first","second","third","fourth","fifth","seventh","eighth","ninth","tenth","eleventh","twelfth","teenth","tieth","hundredth","thousandth","milionth"]
-                            if eng.endswith(tuple(ordinal_suff)) and "garren" in lag:
+                            if eng.endswith(tuple(ordinal_suff)):# and "garren" in lag:
                                 ordinal = True
                             eusak = re.split(',|;',lag)
                             for eus in eusak:
@@ -646,3 +654,7 @@ class ItzulDB:
 
     def toHash(self):
         return self.itzTBX.toHash()
+
+    def fromPattern(self,pat):
+        return self.itzTBX.fromPattern(pat)
+        
