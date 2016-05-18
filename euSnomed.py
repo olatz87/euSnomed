@@ -149,7 +149,7 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
             print("EZ DAKIT ZER GERTATZEN DEN!!",hie,eg)
 
         konTBX.eguneratu(ordList,termS.term,eg['ema'],eg['zb']) #termS.term erabili behar da, kontutan izan nTig objektua bera berreskuratu nahi dugula
-        print(term,termS.getHizkuntza())
+        #print(term,termS.getHizkuntza())
         if ordList != 1 and termS.getHizkuntza() == "en":
             lexentzat(ordList,gehitzeko,term.replace(' ','_'))
 
@@ -210,9 +210,8 @@ def main(args):
     pat_app = {}
     pool = ThreadPool(processes=6)
     lock = Lock()
-    for tok_kop in range(i_min,i_max): #Kontuz!!! i_min inkrementatu dut!!!
+    for tok_kop in range(i_min,i_max):
         print("Itzulpena hasiko da: "+str(tok_kop)+" tokenetarako")  
-
         adj_hiz = {}
         kat_hiz = {}
         if tok_kop == 1:
@@ -232,7 +231,7 @@ def main(args):
         else:
             adj_hiz = {}
             kat_hiz = {}
-        #results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,deepcopy(snomed),itzulDBeng,itzulEnHash,itzulSpHash,emFitx,emaitzak,lock,adj_hiz,kat_hiz)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
+        #results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,deepcopy(snomed),itzulDBeng,itzulEnHash,itzulSpHash,emFitx,emaitzak,lock,adj_hiz,kat_hiz)) for hie in Hierarkia_RF2_probak ]#Hierarkia_RF2_izen//probak
         results = [pool.apply_async(itzulpenaKudeatu,args=(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj_hiz,kat_hiz,itzulEnHash,itzulSpHash,lock)) for hie in Hierarkia_RF2_izen ]#Hierarkia_RF2_izen//probak
         output = [p.get() for p in results]
         for em,hi in output:

@@ -274,11 +274,15 @@ class ItzulDB:
                     #eusak = regex.sub('',euskarazkoak).split('\\')
                     #spaak = regex.sub('',gaztelaniazkoak).split('\\')
                     #engak = regex.sub('',ingelesezkoak).split('\\')
-                    eusak = euskarazkoak.split('\\')
-                    spaak = gaztelaniazkoak.split('\\')
-                    engak = ingelesezkoak.split('\\')
+                    # eusak = euskarazkoak.split('\\')
+                    # spaak = gaztelaniazkoak.split('\\')
+                    # engak = ingelesezkoak.split('\\')
+                    eusak = euskarazkoak.split('//')
+                    spaak = gaztelaniazkoak.split('//')
+                    engak = ingelesezkoak.split('//')
                     if engak[0] != '':
                         for eng in engak:
+                            eng = eng.strip()
                             pos = set()
                             if '(v.)' in eng:
                                 pos.add('Aditz')
@@ -290,6 +294,7 @@ class ItzulDB:
                                 pos.add('Izen')
                             eng = regex.sub('',eng)
                             for eus in eusak:
+                                eus = eus.strip()
                                 if '(v.)' in eus or '(ad.)' in eus:
                                     pos.add('Aditz')
                                 elif '(izond.)' in eus:
@@ -308,9 +313,10 @@ class ItzulDB:
                                         tT = 'Acronym'
                                 if eng[-1] != '.' and eus[-1] == '.':
                                     eus = eus[:-1]
-                                self.hashSet(engH,eng,eus,'EuskalTerm',cS,pos,tT,8,swEng)
+                                self.hashSet(engH,eng,eus,'EuskalTerm',cS,pos,tT,9,swEng)
                     if spaak[0] != '':
                         for spa in spaak:
+                            spa = spa.strip()
                             pos = set()
                             if '(v.)' in spa:
                                 pos.add('Aditz')
@@ -322,6 +328,7 @@ class ItzulDB:
                                 pos.add('Izen')
                             spa = regex.sub('',spa)
                             for eus in eusak:
+                                eus.strip()
                                 if '(v.)' in eus or '(ad.)' in eus:
                                     pos.add('Aditz')
                                 elif '(izond.)' in eus:
@@ -338,7 +345,7 @@ class ItzulDB:
                                     pos.add('IzenBerezi')
                                     if eus.isupper():
                                         tT = 'Acronym'
-                                self.hashSet(spaH,spa,eus,'EuskalTerm',cS,pos,tT,8,swSpa)
+                                self.hashSet(spaH,spa,eus,'EuskalTerm',cS,pos,tT,9,swSpa)
 
     def elhuyar2hash(self,path,hizkuntza,engH,spaH,swEng,swSpa):
         if hizkuntza == 0 or hizkuntza == 2: #ingelesa

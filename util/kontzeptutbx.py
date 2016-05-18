@@ -24,6 +24,18 @@ class KontzeptuTBX:
     def getFSN(self):
         return self.kontzeptu.findtext('descrip[@type="definition"]')
 
+    def transakzioInfoGehitu(self,termEntry,tr_type="importation"):
+        trG = termEntry.find("transacGrp")
+        if trG is not None:
+            #trG.find("transac").text = tr_type
+            trG.find("date").text = date.today().isoformat()
+        else:
+            trG = ET.SubElement(termEntry,"transacGrp")
+            #trT = ET.SubElement(trG,"transac",type="transactionType").text = tr_type
+            trD = ET.SubElement(trG,"date").text= date.today().isoformat()
+        return trG
+
+
     def getPreferredTerm(self,hizkuntza):
         # TODO: ez dabil. termGrp barruan dago
         for terminoa in self.getTerminoak(hizkuntza):
