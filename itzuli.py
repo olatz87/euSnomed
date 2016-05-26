@@ -1,4 +1,7 @@
-import pickle,codecs,os,gc,random,sys
+#!/soft_orokorra_linux_x86_64/python-3.4.2/bin/python3
+# -*- coding: utf-8 -*-
+
+import pickle,codecs,os,gc,random,sys,subprocess
 import scriptak.morfosemantika as MS
 import scriptak.pharma_itzuli as PI
 import scriptak.terminoKonplexuaItzuli as TK
@@ -7,6 +10,8 @@ from util.kontzeptutbx import KontzeptuTBX
 from util.snomed import Snomed
 from util.emaitzak import Emaitzak
 from util.itzuldb import ItzulDB
+
+from subprocess import PIPE,Popen
 
 from termcolor import colored
 from lxml import etree as ET
@@ -19,6 +24,37 @@ def lexentzat(ordList,gehitzeko,termLag):
         else:
             gehitzeko[termLag] = {ordT}
 
+
+
+def pluralaGehitu(hitza):
+    p2 = subprocess.Popen(['flookup -i -x -b  scriptak/foma/deklinabideak.fst'],stdin=PIPE,stdout=PIPE,shell=True)
+    hitza += "+ak"
+    returnwords = p2.communicate(input=hitza.encode('utf8'))
+    itzul1 = returnwords[0].decode('utf8').split('\n')[0]
+    return plurala
+
+def generoaEbatzi(term,hasha):
+    lag = term[:-1]+"o"
+    return hasha.get(lag,None)
+
+
+def pluralaEbatzi(term,hasha,hiz):
+    lag = term[:-1]
+    ordList = None
+    if lag in hasha:
+        ordList = hasha[lag]
+    else:
+        if lag[-1] == "e":
+            lag2 = lag[:-1]
+            ordList = hasha.get(lag2,None)
+        elif lag[-1] == "a" and hiz == "es":
+            lag2 = term[:-1]+"o"
+            ordList = hasha.get(lag2,None)
+    for ordL in ordList:
+        ordT = ordT.find('term')
+        ordT.text = pluralaGehitu(text)
+        
+    return ordList
 
 #Hierarkia_RF2 = ["SPECIAL"]
 #@profile
@@ -68,6 +104,12 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
             term = term.lower()
         ema.gehiToken(termL,'denera','es')
         ordList = spaHash.get(term.lower(),None)
+        if ordList == None:
+            #plurala eta generoa
+            if term.endswith("s"):
+                ordList = pluralaEbatzi(term.lower(),spaHash,"es")
+            elif term.endswith("a"):
+                ordList = generoaEbatzi(term.lower(),spaHash)
         if ordList:
             ema.gehiToken(termL,'itzulia','es')
             #konTBX.eguneratu(ordList,terminoS.term,ema,zb)
@@ -76,7 +118,6 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
             eguneratzekoak.append(egu_lag)
             ema.setTerminoa(term,'es','bai')
         else:
-            #plurala eta generoa
             ema.setTerminoa(term,'es','ez')
         i += 1
         if i%1000 == 0:
@@ -107,6 +148,11 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
         #Lehenengo urratsa
         ordList = engHash.get(term.lower(),None)
         #print(el)
+        if ordList == None:
+            #plurala
+            if term.endswith("s"):
+                ordList = pluralaEbatzi(term.lower(),engHash,"en")
+
         if ordList:
             ema.gehiToken(termL,'itzulia','en')
             #konTBX.eguneratu(ordList,terminoS.term,ema,zb)
