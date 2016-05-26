@@ -76,6 +76,7 @@ def itzuli(snomed,ema,path,engHash,spaHash,kode_en,kode_es,tok_kop,adj_hiz,kat_h
             eguneratzekoak.append(egu_lag)
             ema.setTerminoa(term,'es','bai')
         else:
+            #plurala eta generoa
             ema.setTerminoa(term,'es','ez')
         i += 1
         if i%1000 == 0:
