@@ -101,7 +101,7 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
     tf_emaitzak.close()
     tf_adj_hiz.close()
     tf_kat_hiz.close()
-    p = subprocess.call('python3 itzuli.py '+hie+' '+str(tok_kop)+" "+str(i_min)+" "+str(i_max)+' '+path+' '+emFitx+' '+tf_emaitzak.name+' '+tf_adj_hiz.name+' '+tf_kat_hiz.name+' '+tf_egun.name+' '+tf_ord_h.name+' '+tf_ema.name,shell=True)
+    p = subprocess.call('./itzuli.py '+hie+' '+str(tok_kop)+" "+str(i_min)+" "+str(i_max)+' '+path+' '+emFitx+' '+tf_emaitzak.name+' '+tf_adj_hiz.name+' '+tf_kat_hiz.name+' '+tf_egun.name+' '+tf_ord_h.name+' '+tf_ema.name,shell=True)
     egun = pickle.load(tf_egun)
     ord_h = pickle.load(tf_ord_h)
     ema = pickle.load(tf_ema)
