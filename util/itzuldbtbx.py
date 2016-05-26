@@ -106,6 +106,7 @@ class ItzulDBTBX:
                 term = ET.SubElement(tig,'term').text = eu
                 sKey = ET.SubElement(tig,'admin',type='sortKey').text = unidecode.unidecode(eu)
                 ews = ET.SubElement(tig,'admin',type='elementWorkingStatus').text = 'starterElement'
+                hizt_kop = len(orda.getHiztegiZerrenda())
                 for hiz in orda.getHiztegiZerrenda():
                     enSo = ET.SubElement(tig,'admin',type='entrySource').text = hiz
                 if not orda.getPOS():
@@ -116,7 +117,7 @@ class ItzulDBTBX:
                     #print("tig",ET.tounicode(tig,pretty_print=True))
                     if pos in ["Izen","IzenBerezi"]:
                         izena = True
-                rel = ET.SubElement(tig,'descrip',type='reliabilityCode').text = str(orda.getReliabilityCode())
+                rel = ET.SubElement(tig,'descrip',type='reliabilityCode').text = str(orda.getReliabilityCode()+hizt_kop*0.1)
                 caSi = ET.SubElement(tig,'termNote',type='usageNote').text = orda.getCaseSignificance()
                 #print(eu,hiz,orda.getTermType())
                 if orda.getTermType() != 'Unknown':

@@ -590,6 +590,22 @@ class ItzulDB:
                         pos = set([lineLag[2]])
                     self.hashSet(engH,eng,eus,'Medikuak',cS,pos,'',8,swEng)
 
+    def gainerakoPareak(self,path,engH,swEng):
+        with codecs.open(path+'baliabideak/olatzenHiztegia.txt',encoding='utf-8') as fitx:
+            for line in fitx:
+                eremuak = line.strip().split("\t")
+                eng = eremuak[0]
+                eusak = eremuak[1].split(",")
+                pos = set([eremuak[2]])
+                for eus in eusak:
+                    if not eus:
+                        continue
+                    cS = 'InitialInsensitive'
+                    if eus[0].upper():
+                        cS = 'Sensitive'
+                    self.hashSet(engH,eng,eus,'Olatz',cS,pos,'',6,swEng)
+                
+
     def hasieratu(self,path,hizkuntza):
 
         with codecs.open(path+'zerrendaBeltzak/stopWords-en.txt',encoding='utf-8') as fitx:
@@ -618,6 +634,8 @@ class ItzulDB:
             #print('+Morfosemantika',len(engH),len(spaH))
             self.medikuak2Hash(path,engH,swEng)
             print('+Medikuak',len(engH),len(spaH))
+            self.gainerakoPareak(path,engH,swEng)
+            print('+Beste batzuk',len(engH),len(spaH))
         self.gns2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
         print('+GNS10',len(engH),len(spaH))
         self.elhuyar2hash(path,hizkuntza,engH,spaH,swEng,swSpa)
