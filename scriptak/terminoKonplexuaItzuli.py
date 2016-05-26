@@ -10,8 +10,30 @@ from analizatzaileak import analizatzailea_en
 def pluraleraPasa(term):
     if '+ReM' in term:
         term = term.replace('+ReM','+eM')
-    elif '+a+ri' in term:
-        term = term.replace('+a+ri','+ei')
+    elif '+ari' in term:
+        term = term.replace('+ari','+ei')
+    elif '+ri' in term:
+        term = term.replace('+ri','+ei')
+    elif '+areM' in term:
+        term = term.replace('+areM','+eM')
+    elif '+arekiM' in term:
+        term = term.replace('+arekiM','+ekiM')
+    elif '+Ean' in term:
+        term = term.replace('+Ean','+etan')
+    elif '+Eko' in term:
+        term = term.replace('+Eko','+etako')
+    elif '+ako' in term:
+        term = term.replace('+ako','+etako')
+    elif '+' in term:
+        term = term.replace('+ako','+etako')
+    elif '+agatikako' in term:
+        term = term.replace('+agatikako','+engatikako')
+    elif '+ak_eragindako' in term:
+        term = term.replace('+ak_eragindako','+ek_eragindako')
+    elif '+Erako' in term:
+        term = term.replace('+Erako','+etarako')
+    elif '+a' in term:
+        term = term.replace('+a','+ak')
     return term
 
 # def analisiakKargatu():
@@ -24,7 +46,7 @@ def pluraleraPasa(term):
 #     return hiztegia
 
 def itzulpenaPrestatu(term,analisia):
-    p = subprocess.Popen(['flookup -i -x -b  scriptak/foma/kategorizazioaOrokortuta.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
+    p = subprocess.Popen(['flookup -a -i -x -b  scriptak/foma/kategorizazioaOrokortuta.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
     returnword = p.communicate(input=term.encode('utf-8'))
     trans = returnword[0].decode('utf-8').strip()
     itzultzeko = []
@@ -32,7 +54,7 @@ def itzulpenaPrestatu(term,analisia):
     plurala = ''
     pluB = False
     if trans == '+?':
-        p = subprocess.Popen(['flookup -i -x -b scriptak/foma/kategorizazioaOrokortuta.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
+        p = subprocess.Popen(['flookup -a -i -x -b scriptak/foma/kategorizazioaOrokortuta.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
         lehenaMaius = term[0].upper()+term[1:]
         returnword = p.communicate(input=lehenaMaius.encode('utf-8'))
         trans = returnword[0].decode('utf-8').strip()
@@ -72,7 +94,7 @@ def itzulpenaPrestatu(term,analisia):
                             plurala = forB
                             #print(termB)
                     if termBerria != '':
-                        p = subprocess.Popen(['flookup -i -x -b  scriptak/foma/kategorizazioaOrokortuta.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
+                        p = subprocess.Popen(['flookup -a -i -x -b  scriptak/foma/kategorizazioaOrokortuta.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
                         returnword = p.communicate(input=termBerria.encode('utf-8'))
                         trans = returnword[0].decode('utf-8').strip()
                         if trans != "+?":
@@ -124,6 +146,11 @@ def itzulpenaPrestatu(term,analisia):
                 #print("Tartekoak: "+" ".join(itzultzeko))
     #print(itzultzeko)
     return itzultzeko,patroiak
+
+def jatorrizkoPluralaEbatzi(term):
+    term = pluraleraPasa(term)
+    term = term.replace("ak+",'')
+    return term
 
 
 def itzulpena(term,analisia):
@@ -182,9 +209,18 @@ def itzulpena(term,analisia):
             if " + " in itzul:
                 itzul = itzul.replace(' + ',' &&& ')
                 plus = True
-            itzLag = itzul.split('+')
-            itzLag[0] = itzLag[0].replace('E','&e&').replace('M','&m&').replace('R','&r&').replace('1','&bat&').replace('3','&hiru&').replace('4','&lau&').replace('/','&barra&').replace('\\','&kontrabarra&')
-            itzul = '+'.join(itzLag)
+            itzTokenak = itzul.split(" ")
+            for i in range (0,len(itzTokenak)):
+                itzTok = itzTokenak[i]
+                itzLag = itzTok.split('+')
+                print(itzLag)
+                itzLag[0] = itzLag[0].replace('E','&e&').replace('M','&m&').replace('R','&r&').replace('1','&bat&').replace('3','&hiru&').replace('4','&lau&').replace('/','&barra&').replace('\\','&kontrabarra&')
+                itzTok = '+'.join(itzLag)
+                if itzLag[0].endswith("ak"):
+                    print("pluralean dago!!!")
+                    itzTok = jatorrizkoPluralaEbatzi(itzTok)
+                itzTokenak[i] = itzTok
+            itzul = " ".join(itzTokenak)
             p2 = subprocess.Popen(['flookup -i -x -b  scriptak/foma/deklinabideak.fst'],stdin=PIPE,stdout=PIPE,shell=True)
             returnwords = p2.communicate(input=itzul.encode('utf8'))
             itzul1 = returnwords[0].decode('utf8').split('\n')[0]
