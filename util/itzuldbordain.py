@@ -48,4 +48,7 @@ class ItzulDBOrdain:
         return self.termType
         
     def setPOS(self,pos):
-        self.pOS.add(pos)
+        if type(pos) == type(set()):
+            self.pOS.union(pos)
+        else:
+            self.pOS.add(pos)

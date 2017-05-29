@@ -29,6 +29,7 @@ class ItzulDB:
     
     def hashSet(self,hasha,key,value,itur,caseSig,pOs,termType,rC,sw):
         key = key.strip()
+        value = value.strip()
         if 'Ã' in key :
             has = key
             key = key.replace('Ã¡','á')
@@ -37,19 +38,30 @@ class ItzulDB:
             key = key.replace('Ã©','é')
             key = key.replace('Ãº','ú')
         key = key.lower()
+        # if key == "vertical":
+        #     print(key,value,itur,caseSig,pOs)
+        if key.endswith((",",";")) :
+            key = key[:-1]
+        if value.endswith((",",";")) :
+            value = value[:-1]
         if key not in sw:
             key = key.encode('utf-8')
             if caseSig == 'Unknown':
                 value = value.lower()
             elif caseSig == 'InitialInsensitive':
                 value = value[0].lower()+value[1:]
-            value_or = value.strip()
-            value = value.strip().encode('utf-8')
+            value_or = value
+            value = value.encode('utf-8')
             ordainList = hasha.get(key,{})
             if itur == 'Elhuyar' and ordainList:
+                bukatu = False
                 for ket,ordain in ordainList.items():
                     if 'Elhuyar' not in ordain.getHiztegiZerrenda():
-                        return None
+                        #if not ordain.getPOS():
+                            #ordain.setPOS(pOs)
+                        bukatu = True
+                if bukatu:
+                    return None
             if itur == "GNS10" and ordainList and value_or[-1] == 'a':
                 v_lag = value_or[:-1]
                 for katea in ordainList:
@@ -58,21 +70,30 @@ class ItzulDB:
                     elif v_lag.endswith("rr"):
                         if v_lag[:-1] == katea.decode("utf-8"):
                             value = katea
-                        
 
             if not pOs:
+                if value_or in self.itzTBX.kat_hiz:
+                    kat = self.itzTBX.kat_hiz[value_or].split("\t")[0]
+                    azpKat = self.itzTBX.kat_hiz[value_or].split("\t")[1]
+                    pOs = self.edbl2enum(kat,azpKat)
                 if value_or in self.itzTBX.adj_hiz:
-                    #TODO: aztertu \t agertu behar den.
                     if "IZLK" in self.itzTBX.adj_hiz[value_or]:
                         pOs.add("Izenlagun")
                     else:
                         pOs.add("Izenondo")
-                elif value_or in self.itzTBX.kat_hiz:
-                    kat = self.itzTBX.kat_hiz[value_or].split("\t")[0]
-                    azpKat = self.itzTBX.kat_hiz[value_or].split("\t")[1]
-                    pOs = self.edbl2enum(kat,azpKat)
-                elif value_or.endswith("iko") and key.endswith(b"ic"):
+                if value_or.endswith("iko") and key.endswith(b"ic") and not pOs:
                     pOs = set(["Izenlagun"])
+                if not pOs and " " in value_or:
+                    value_lag = value_or.split(" ")[-1]
+                    if value_lag in self.itzTBX.kat_hiz:
+                        kat = self.itzTBX.kat_hiz[value_lag].split("\t")[0]
+                        azpKat = self.itzTBX.kat_hiz[value_lag].split("\t")[1]
+                        pOs = self.edbl2enum(kat,azpKat)
+                    if value_lag in self.itzTBX.adj_hiz:
+                        if "IZLK" in self.itzTBX.adj_hiz[value_lag]:
+                            pOs.add("Izenlagun")
+                        else:
+                            pOs.add("Izenondo")
             elif "Adjektibo" in pOs:
                 if value_or in self.itzTBX.adj_hiz:
                     pOs.remove("Adjektibo")
@@ -169,7 +190,7 @@ class ItzulDB:
                 eusak = [eusL]
                 if ';' in eusL[:-1]:
                     eusak = eusL.split(';')
-                while eusak[-1][-1] == ';':
+                while eusak[-1][-1] in (';',","):
                     j += 1
                     eusak.append(fitxategia[i+j].strip())
                 j += 1
@@ -177,7 +198,7 @@ class ItzulDB:
                 engak = [engL]
                 if ';' in engL[:-1]:
                     engak = engL.split(';')
-                while engak[-1][-1] == ';':
+                while engak[-1][-1] in (';',","):# == ';':
                     j += 1
                     engak.append(fitxategia[i+j].strip())
                 j += 1
@@ -185,7 +206,7 @@ class ItzulDB:
                 spaak = [spaL]
                 if ';' in spaL[:-1]:
                     spaak = spaL.split(';')
-                while spaak[-1][-1] == ';':
+                while spaak[-1][-1] in (';',","):# == ';':
                     j += 1
                     spaak.append(fitxategia[i+j].strip())
                 i += j + 1
@@ -196,7 +217,7 @@ class ItzulDB:
                             eus = eus.replace(';','')
                             cS = 'Unknown'
                             pOS = set()
-                            pOS.add('Izen')
+                            #pOS.add('Izen')
                             tT = 'Unknown'
                             self.hashSet(engH,eng,eus,'Anatomia',cS,pOS,tT,9,swEng)
                 if (hizkuntza >= 1):
@@ -206,7 +227,7 @@ class ItzulDB:
                             eus = eus.replace(';','')
                             cS = 'Unknown'
                             pOS = set()
-                            pOS.add('Izen')
+                            #pOS.add('Izen')
                             tT = 'Unknown'
                             self.hashSet(spaH,spa,eus,'Anatomia',cS,pOS,tT,9,swSpa)
                                     
@@ -283,17 +304,18 @@ class ItzulDB:
                     if engak[0] != '':
                         for eng in engak:
                             eng = eng.strip()
-                            pos = set()
-                            if '(v.)' in eng:
-                                pos.add('Aditz')
-                            elif '(izond.)' in eng:
-                                pos.add('Aditzondo')
-                            elif '(adj.)' in eng:
-                                pos.add('Adjektibo')
-                            elif '(n.)' in eng or '(iz.)' in eng:
-                                pos.add('Izen')
+                            # pos = set()
+                            # if '(v.)' in eng:
+                            #     pos.add('Aditz')
+                            # elif '(izond.)' in eng:
+                            #     pos.add('Aditzondo')
+                            # elif '(adj.)' in eng:
+                            #     pos.add('Adjektibo')
+                            # elif '(n.)' in eng or '(iz.)' in eng:
+                            #     pos.add('Izen')
                             eng = regex.sub('',eng)
                             for eus in eusak:
+                                pos = set()
                                 eus = eus.strip()
                                 if '(v.)' in eus or '(ad.)' in eus:
                                     pos.add('Aditz')
@@ -317,17 +339,18 @@ class ItzulDB:
                     if spaak[0] != '':
                         for spa in spaak:
                             spa = spa.strip()
-                            pos = set()
-                            if '(v.)' in spa:
-                                pos.add('Aditz')
-                            elif '(izond.)' in spa:
-                                pos.add('Aditzondo')
-                            elif '(adj.)' in spa:
-                                pos.add('Adjektibo')
-                            elif '(n.)' in spa or '(iz.)' in spa:
-                                pos.add('Izen')
+                            # pos = set()
+                            # if '(v.)' in spa:
+                            #     pos.add('Aditz')
+                            # elif '(izond.)' in spa:
+                            #     pos.add('Aditzondo')
+                            # elif '(adj.)' in spa:
+                            #     pos.add('Adjektibo')
+                            # elif '(n.)' in spa or '(iz.)' in spa:
+                            #     pos.add('Izen')
                             spa = regex.sub('',spa)
                             for eus in eusak:
+                                pos = set()
                                 eus.strip()
                                 if '(v.)' in eus or '(ad.)' in eus:
                                     pos.add('Aditz')
@@ -379,7 +402,7 @@ class ItzulDB:
                                 if '/' in eus or '...' in eus or eus[-1] == '-' or eus[0] == '-' or "+" in eus:
                                     continue
                                 if ordinal:
-                                    if not eus.endswith("garren"):
+                                    if not eus.endswith("garren") and eus not in  ["lehenengo"] :
                                         continue
                                 if '[' in eus:
                                     regex = re.compile('\[[^]]+?\]')

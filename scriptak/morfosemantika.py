@@ -5,8 +5,9 @@ from subprocess import PIPE,Popen
 def main(argv):
     bertsioa = '2'
     term =''
+    inprimatu = False
     try:
-        opts, args = getopt.getopt(argv,"hv:t:",["bertsioa="])
+        opts, args = getopt.getopt(argv,"hv:t:p",["bertsioa="])
     except getopt.GetoptError:
         print('python morfosemantika.py -v <bertsiozenbakia> -t <terminoa>')
         sys.exit(2)
@@ -18,6 +19,8 @@ def main(argv):
             bertsioa = arg
         elif opt in ("-t","--terminoa"):
             term = arg
+        elif opt in ("-p"):
+            inprimatu = True
     if not term:
         print('Sarrera terminoa beharrezkoa da')
         print('python morfosemantika.py -v <bertsiozenbakia> -t <terminoa>')
@@ -28,7 +31,7 @@ def main(argv):
     if term[0].isupper():
         larria = True
     p = subprocess.Popen(['flookup -i -x -b '+path+'idenBateratuaOsatua.fst'],stdin=PIPE,stdout=PIPE,shell=True,close_fds=True)
-    returnword = p.communicate(input=term.encode('utf8'))
+    returnword = p.communicate(input=term.lower().encode('utf8'))
     idenOnak = []
     trans = returnword[0].decode('utf8').strip()
     if trans == '+?':
@@ -63,6 +66,8 @@ def main(argv):
     if '' in idenOnak:
         idenOnak.remove('')
     lag = set()
+    if inprimatu:
+        print(idenOnak)
     idatz = ''
     for s in idenOnak:
         p1 = subprocess.Popen(['flookup -i -x -b '+path+'itzultzaileaOsatua.fst'],stdin=PIPE,stdout=PIPE,shell=True)

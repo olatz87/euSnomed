@@ -37,21 +37,22 @@ class ItzulDBTBX:
                 self.kat_hiz[zat[1]] = zat[3]+'\t'+zat[4]
 
     def edbl2enum(self,kat,azpKat):
-        pOs = set()
+        #print(kat,azpKat)
         if kat == "IZE":
             if azpKat[:3] == "LIB" or azpKat[:2] == "IB" :
-                pOs.add("IzenBerezi")
+                pOs = "IzenBerezi"
             else:
-                pOs.add("Izen")
+                pOs = "Izen"
         elif kat == "ADB":
-            pOs.add("Aditzondo")
+            pOs = "Aditzondo"
         elif kat == "SIG" or kat == "LAB" or kat == "SNB":
-            pOs.add("Izen")
+            pOs = "Izen"
             termType = "Acronym"
         elif kat == "ADI":
-            pOs.add("Aditz")
+            pOs = "Aditz"
         else:
-            pOs.add("Besterik")
+            pOs = "Besterik"
+        #print(pOs)
         return pOs
 
     def __init__(self,hizkuntza,path):
@@ -110,7 +111,10 @@ class ItzulDBTBX:
                 for hiz in orda.getHiztegiZerrenda():
                     enSo = ET.SubElement(tig,'admin',type='entrySource').text = hiz
                 if not orda.getPOS():
-                    orda.setPOS('Izen')
+                    if " " not in eu and eu.endswith(('ko','go')):
+                        orda.setPOS('Izenlagun')
+                    else:
+                        orda.setPOS('Izen')
                 for pos in posak:
                     #print(erd,eu,pos)
                     ePOS = ET.SubElement(tig,'termNote',type='partOfSpeech').text =pos
@@ -156,7 +160,7 @@ class ItzulDBTBX:
     def jaso(self,terminoa):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
         for termEntry in self.erroa.findall('text/body/termEntry'):
-            lag = termEntry.findtext('langSet[{http://www.w3.org/XML/1998/namespace}lang="'+self.hizkuntza+'"]/tig/term',namespaces=namespace)
+            lag = termEntry.findtext('langSet[@{http://www.w3.org/XML/1998/namespace}lang="'+self.hizkuntza+'"]/tig/term',namespaces=namespace)
             if lag and lag.lower() == terminoa.lower():
                 return termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/tig',namespaces=namespace)
                 
@@ -172,17 +176,41 @@ class ItzulDBTBX:
         langSet.set('{http://www.w3.org/XML/1998/namespace}lang','eu')
         for eu in ordList:
             if eu:
+                #print(1,1,eu,pOS)
                 if not pOS:
                     if eu in self.adj_hiz:
+                        #print("adjektiboetan")
                         if "\tIZLK" in self.adj_hiz[eu]:
                             pOS.add("Izenlagun")
                         else:
                             pOS.add("Izenondo")
-                    elif eu in self.kat_hiz:
-                        #print(self.kat_hiz[eu])
+                    if eu in self.kat_hiz:
+                        #print("edbln-ko kategorian")
                         kat = self.kat_hiz[eu].split("\t")[0]
+                        #print("kat",term)
                         azpKat = self.kat_hiz[eu].split("\t")[1]
-                        pOS = self.edbl2enum(kat,azpKat)
+                        #print("azpKat",term)
+                        edKat = self.edbl2enum(kat,azpKat)
+                        #print('edKat',edKat)
+                        pOS.add(edKat)
+                        #print("pos.add",term,pOS)
+                    if eu.endswith("iko") and term.endswith(b"ic") and not pOS:
+                        #print("iko bukaera")
+                        pOS = set(["Izenlagun"])
+                    if not pOS and " " in eu:
+                        #print("gainerakoak")
+                        eu_lag = eu.split(" ")[-1]
+                        if eu_lag in self.kat_hiz:
+                            kat = self.kat_hiz[eu_lag].split("\t")[0]
+                            azpKat = self.kat_hiz[eu_lag].split("\t")[1]
+                            pOS.add(self.edbl2enum(kat,azpKat))
+                        if eu_lag in self.adj_hiz:
+                            if "IZLK" in self.adj_hiz[eu_lag]:
+                                pOS.add("Izenlagun")
+                            else:
+                                pOS.add("Izenondo")
+                    #print("kurrukukuk")
+                #print(1,2,eu,pOS)
                 tig = ET.SubElement(langSet,'tig',id='t'+str(self.termIdAlt))
                 term = ET.SubElement(tig,'term').text = eu
                 sKey = ET.SubElement(tig,'admin',type='sortKey').text = unidecode.unidecode(eu)
@@ -193,7 +221,7 @@ class ItzulDBTBX:
                     for orP in orPat:
                         orDa = ET.SubElement(tig,"admin",type="originatingDatabase").text = orP
                 for p in pOS:
-                    ePOS = ET.SubElement(tig,'termNote',type='partOfSpeech').text =p
+                    ePOS = ET.SubElement(tig,'termNote',type='partOfSpeech').text = p
                 rel = ET.SubElement(tig,'descrip',type='reliabilityCode').text = str(rC)
                 caSi = ET.SubElement(tig,'termNote',type='usageNote').text = caseSig
                 #print(eu,hiz,orda.getTermType())

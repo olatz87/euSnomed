@@ -68,9 +68,9 @@ class Snomed:
             print('Snomed XMLtan banatua!')
 
     
-    def kargatu(self,hie,cli=""):
+    def kargatu(self,hie,cli="",direk=""):
         self.hierarkia = hie
-        self.snoTBX = SnomedTBX(self.path,hie,cli)
+        self.snoTBX = SnomedTBX(self.path,hie,cli,direk)
 
     def getHierarkia(self):
         return self.hierarkia
@@ -134,6 +134,9 @@ class Snomed:
     def getMorfologiakBakarrik(self):
         return self.snoTBX.getMorfologiakBakarrik()
 
+    def getIngelesaBakarrik(self):
+        return self.snoTBX.getIngelesaBakarrik()
+
     def getIturburuKop(self):
         return self.snoTBX.getIturburuKop()
 
@@ -159,3 +162,10 @@ class Snomed:
         identifikadoreak ez du inolako markarik izan behar. Zuzeneak snomed CT identifikadorea
         """
         return self.snoTBX.getKontzeptuTBX(cId) #KontzeptuTBX itzultzen du
+
+
+    def ordainakJasoDId(self,dId):
+        return self.snoTBX.ordainakJasoDId(dId)
+
+    def getErroa(self):
+        return self.snoTBX.getErroa();

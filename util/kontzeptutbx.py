@@ -24,6 +24,7 @@ class KontzeptuTBX:
     def getFSN(self):
         return self.kontzeptu.findtext('descrip[@type="definition"]')
 
+
     def transakzioInfoGehitu(self,termEntry,tr_type="importation"):
         trG = termEntry.find("transacGrp")
         if trG is not None:
@@ -78,6 +79,10 @@ class KontzeptuTBX:
     def getKontzeptuId(self):
         return self.kontzeptu.get('id')
 
+    def getTerminoaText(self,dId):
+        return self.kontzeptu.findtext('langSet/ntig[@id="'+dId+'"]/termGrp/term')
+
+
     def eguneratu(self,ordList,elNtig,ema,zb):
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
         euLanSet = self.kontzeptu.find('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]',namespaces=namespace)
@@ -90,9 +95,10 @@ class KontzeptuTBX:
         zahList = {} #key = term.text, value = ntig
         for euntig in euLanSet.findall('ntig'):
             zahList[euntig.findtext('termGrp/term')] = euntig
-        #hizPar =[zt,anatomia,erizaintza,gns10,elhuyar,euskalterm,adm,sexologia,drogak]
-        hizPar = [False,False,False,False,False,False,False,False,False,False]
+        #hizPar =[zt,anatomia,erizaintza,gns10,elhuyar,euskalterm,adm,sexologia,drogak,edbl,literala,olatz,medikuak]
+        hizPar = [False,False,False,False,False,False,False,False,False,False,False,False,False]
         mor = False
+        pat = False
         erdId = elNtig.get('id')
         terminoTBX = TerminoTBXSnomed(elNtig)
         erdTerm = terminoTBX.getTerminoa()
@@ -106,7 +112,7 @@ class KontzeptuTBX:
             if elTerm.lower() in zerrendaBeltza:
                 continue
             for it in itList:
-                if it != 'Morfologia':
+                if it not in ['Morfologia',"Patroiak"]:
                     ema.gehiHiztegia(it,'ordain',hizkuntza)
                     hizPar[Iturburua[it][1]-1] = True
             if True in hizPar :
@@ -114,7 +120,9 @@ class KontzeptuTBX:
             if 'Morfologia' in itList:
                 ema.gehiAlgoritmoa('morfo','ordain')
                 mor = True
-
+            if "Patroiak" in itList:
+                ema.gehiAlgoritmoa("sintaxia","ordain")
+                pat = True
             if b and elTerm in zahList:
                 ordainS = OrdainTBXSnomed(zahList[elTerm])
                 posL = set()
@@ -132,8 +140,9 @@ class KontzeptuTBX:
                 if erdId not in cOList:
                     ordainS.gehitu('admin','conceptOrigin',erdId)
                 rl = ordainI.getReliabilityCode()
-                if int(ordainS.getReliabilityCode()) < int(rl):
+                if float(ordainS.getReliabilityCode()) < float(rl):
                     ordainS.setReliabilityCode(rl)
+                
                 cS = ordainI.getUsageNote()
                 if cS == 'Sensitive' or ordainS.getUsageNote() == 'Unknown':
                     #print(ordainS.getKarKatea())
@@ -144,21 +153,21 @@ class KontzeptuTBX:
                 tG = ET.SubElement(ntig,'termGrp')
                 termEl = ET.SubElement(tG,'term').text = elTerm
                 sK = ET.SubElement(ntig,'admin',type='sortKey').text = unidecode.unidecode(elTerm)
-                if " " in elTerm:
-                    ET.SubElement(ntig,'termNote',type='partOfSpeech').text = 'Termino konplexu'
-                else:
-                    for pos in ordainI.getPOS():
-                        tG.append(deepcopy(pos))
+                # if " " in elTerm:
+                #     ET.SubElement(ntig,'termNote',type='partOfSpeech').text = 'Termino konplexu'
+                # else:
+                for pos in ordainI.getPOS():
+                    tG.append(deepcopy(pos))
                 #ews = ET.SubElement(ntig,'admin',type='elementWorkingStatus').text = 'workingElement'
                 for it in itList:
                     eS = ET.SubElement(ntig,'admin',type='entrySource').text = Iturburua[it][0]
                 cO = ET.SubElement(ntig,'admin',type='conceptOrigin').text = erdId
-                rC = ET.SubElement(ntig,'descrip',type='reliabilityCode').text = ordainI.getReliabilityCode()
+                rc_ord = float(ordainI.getReliabilityCode()) + round(0.1*len(itList))
+                rC = ET.SubElement(ntig,'descrip',type='reliabilityCode').text = str(rc_ord)
                 termNote = ET.SubElement(tG,'termNote',type='administrativeStatus').text = 'admittedTerm-adm-sts'
                 uN = ET.SubElement(tG,'termNote',type='usageNote').text = ordainI.getUsageNote()
                 if orPat:
-                    for orP in orPat:
-                        orDa = ET.SubElement(ntig,"admin",type="originatingDatabase").text = orP
+                    orDa = ET.SubElement(ntig,"admin",type="originatingDatabase").text = orPat
                 trans = self.transakzioInfoGehitu(self.kontzeptu,"origination")
 
         for i in range(-1,len(hizPar)-1):
@@ -168,6 +177,8 @@ class KontzeptuTBX:
             ema.gehiAlgoritmoa('hiztegia','pare',hizkuntza)
         if mor:
             ema.gehiAlgoritmoa('morfo','pare')
+        if pat:
+            ema.gehiAlgoritmoa("sintaxia","pare")
         
     ns = 100
     @staticmethod
@@ -236,7 +247,7 @@ class KontzeptuTBX:
                         if erdId not in cOList:
                             ordainS.gehitu('admin','conceptOrigin',erdId)
                     rl = ordainB.getReliabilityCode()
-                    if int(ordainS.getReliabilityCode()) < int(rl):
+                    if float(ordainS.getReliabilityCode()) < float(rl):
                         ordainS.setReliabilityCode(rl)
                     cS = ordainB.getUsageNote()
                     if cS == 'Sensitive' or ordainS.getUsageNote() == 'Unknown':
@@ -279,3 +290,10 @@ class KontzeptuTBX:
                         lag = co.text
                     ntig.remove(co)
                 coLag = ET.SubElement(ntig,'admin',type='conceptOrigin').text=lag
+
+    def isTranslated(self):
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        if self.kontzeptu.find('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]',namespaces=namespace) is not None:
+            return True
+        else:
+            return False

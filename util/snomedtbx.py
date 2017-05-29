@@ -16,11 +16,16 @@ from datetime import date
 class SnomedTBX:
     
 
-    def __init__(self,path,hKodea = '',cli=''):
+    def __init__(self,path,hKodea = '',cli='',direk=''):
         self.path = path
         self.hierarkia = hKodea
         self.clinical = cli
-        if self.hierarkia != '':
+        if direk != '':
+            fitx = direk+self.hierarkia+self.clinical+".xml"
+            parser = ET.XMLParser(encoding='utf-8')
+            tree = ET.parse(fitx,parser)
+            self.erroa = tree.getroot()
+        elif self.hierarkia != '':
             fitx = path+"/snomed/XMLak/"+self.hierarkia+self.clinical+".xml"
             parser = ET.XMLParser(encoding='utf-8')
             tree = ET.parse(fitx,parser)
@@ -37,19 +42,6 @@ class SnomedTBX:
             trD = ET.SubElement(trG,"date").text= date.today().isoformat()
         return trG
 
-
-
-    def fitx2hash(self,fitxategia):
-        hasha = {}
-        with codecs.open(fitxategia,encoding='utf-8') as fitx:
-            for lerroa in fitx:
-                lerroa = lerroa.strip()
-                elementuak = lerroa.split('\t')
-                if len(elementuak) > 4 and elementuak[4] != '':
-                    zer = hasha.get(elementuak[4],[])
-                    zer.append(elementuak)
-                    hasha[elementuak[4]]=zer
-        return hasha
     
     def burukoaXMLSnomed(self,hie):
         header = ET.Element('martifHeader')
@@ -450,11 +442,27 @@ class SnomedTBX:
     def pareaJaso(self,terminoa):
         #emandako terminoari dagokion termEntry osoa itzultzen du (ordain guztiak hizkuntza guztietan)
         namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        aurkituak = set()
         for termEntry in self.erroa.findall('text/body/termEntry'):
             for lagTerm in termEntry.findall('langSet/ntig/termGrp/term',namespaces=namespace):
                 lag = lagTerm.text
                 if lag and lag.lower() == terminoa.lower():
-                    return termEntry
+                    aurkituak.add(termEntry)
+        return aurkituak
+
+
+    def ordainakJasoDId(self,dId):
+        termTBX = self.getTerminoTBX(dId)
+        termEntry = termTBX.term.getparent().getparent()
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        ordainak = set()
+        for ordain in termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/ntig',namespaces=namespace):
+            lagak = ordain.findall('admin[@type="conceptOrigin"]')
+            for lag in lagak:
+                l = lag.text
+                if l and l == dId:
+                    ordainak.add(OrdainTBXSnomed(ordain))
+        return ordainak
 
     def getItzuliGabeak(self,hizkuntza):
         #itzuli gabeko terminoen zerrenda itzultzen du (TerminoTBXSnomed-ak)
@@ -538,3 +546,33 @@ class SnomedTBX:
         return kont
 
 
+    def getIngelesaBakarrik(self):
+        kont = 0
+        bal_lex = 0
+        kk = 0
+        namespace={'xml':'http://www.w3.org/XML/1998/namespace'}
+        for termEntry in self.erroa.findall('text/body/termEntry'):
+            eusak = termEntry.findall('langSet[@{http://www.w3.org/XML/1998/namespace}lang="eu"]/ntig',namespaces=namespace)
+            for eus in eusak:
+                coak = eus.findall('admin[@type="conceptOrigin"]')
+                ing = False
+                for co in coak:
+                    if co.text[:2] == "en":
+                        ing = True
+                if ing:
+                    kont += 1
+                esak = eus.findall('admin[@type="entrySource"]')
+                bal = False
+                for es in esak:
+                    if es.text[0] == "0" and es.text != "000":
+                        bal = True
+                if ing and bal:
+                    bal_lex += 1
+                if bal:
+                    kk += 1
+        print(kont,bal_lex,kk)
+        return kont,bal_lex
+
+
+    def getErroa(self):
+        return self.erroa

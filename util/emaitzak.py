@@ -22,6 +22,9 @@ class Emaitzak:
                           [0,0,0,0],#administrazioa[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
                           [0,0,0,0],#sexologia[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
                           [0,0,0,0],#drogak[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
+                          [0,0,0,0],#edbl[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
+                          [0,0,0,0],#literala[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
+                          [0,0,0,0],#olatz[ingOrdainak,ingParekatzeak,spaOrdainak,spaParekatzeak]
                           [0,0,0,0]]#medikuak
         self.tokenak = [[0,0,0,0],#bat[ingDen,ingBai,gazDen,gazBai]
                         [0,0,0,0],#bi[ingDen,ingBai,gazDen,gazBai]
@@ -83,7 +86,8 @@ class Emaitzak:
         mapG = "\nGNS10 Mapaketan\t"+str(self.algoritmoa[0][0])
         hiztegi ="\nHiztegietan\tTer: "+str(self.algoritmoa[1][1])+"\tOrd: "+str(self.algoritmoa[1][0])+"\t||\tTer: "+str(self.algoritmoa[1][3])+"\tOrd: "+str(self.algoritmoa[1][2])
         morfo = "\nMorfologia\tTer: "+str(self.algoritmoa[2][1])+"\tOrd: "+str(self.algoritmoa[2][0])
-        
+        sin = "\nPatroiak\tTer: "+str(self.algoritmoa[3][1])+"\tOrd: "+str(self.algoritmoa[3][0])
+
         zt = "\n\nZT\t\tTer: "+str(self.hiztegiak[0][1])+"\tOrd: "+str(self.hiztegiak[0][0])+"\t||\tTer: "+str(self.hiztegiak[0][3])+"\tOrd: "+str(self.hiztegiak[0][2])
         anatomia = "\nAnatomia\tTer: "+str(self.hiztegiak[1][1])+"\tOrd: "+str(self.hiztegiak[1][0])+"\t||\tTer: "+str(self.hiztegiak[1][3])+"\tOrd: "+str(self.hiztegiak[1][2])
         erizaintza = "\nErizaintza\tTer: "+str(self.hiztegiak[2][1])+"\tOrd: "+str(self.hiztegiak[2][0])+"\t||\tTer: "+str(self.hiztegiak[2][3])+"\tOrd: "+str(self.hiztegiak[2][2])
@@ -111,7 +115,7 @@ class Emaitzak:
         ordI = "\nDENERA LORTUTAKO ORDAINAK\t"+str(self.ordainakItzuliak)
         print(str(self.algoritmoa))
         print(str(self.tokenak))
-        return burukoa+hiztegi+morfo+zt+anatomia+erizaintza+gns+et+elh+adm+sex+dro+med+mapG+portzentaiak+bat+bi+hiru+lau+gehi+denK+denT+ordI+"\n\n\n"
+        return burukoa+hiztegi+morfo+sin+zt+anatomia+erizaintza+gns+et+elh+adm+sex+dro+med+mapG+portzentaiak+bat+bi+hiru+lau+gehi+denK+denT+ordI+"\n\n\n"
 
     def getTerminoak(self,hizkuntza,mota):
         if mota == 'bai':

@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 #import xml.etree.ElementTree as ET
 from lxml import etree as ET
-from util.terminotbx import TerminoTBX
+from util.tbx import TBX
 
-class TerminoTBXSnomed(TerminoTBX):
+class TerminoTBXSnomed(TBX):
     #ntig elementu bat
     def __init__(self,term):
         super().__init__(term)

@@ -6,22 +6,19 @@ from util.itzuldb import ItzulDB
 from util.enumeratuak import Hierarkia,Hierarkia_RF2,Hierarkia_RF2_probak,Hierarkia_RF2_izen
 from util.emaitzak import Emaitzak
 from util.snomed import Snomed
-# from util.terminotbxsnomed import TerminoTBXSnomed
 from util.kontzeptutbx import KontzeptuTBX
-# from util.snomedtbx import SnomedTBX
 from util.ordaintbxitzuldb import OrdainTBXItzulDB
-# import scriptak.morfosemantika as MS
-# import scriptak.pharma_itzuli as PI
-# import scriptak.terminoKonplexuaItzuli as TK
-#import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Pool, Lock
 from termcolor import colored
 from copy import deepcopy
-#from analizatzaileak import analizatzailea_en
-#from subprocess import Popen,PIPE
+from subprocess import Popen,PIPE
 from lxml import etree as ET
 
+
+def rcHandienekoak(eusak,kop):
+    eus_ord = sorted(eusak, key = lambda k: (-float(k.getReliabilityCode()),k.getKarKatea().count(" ")))
+    return eus_ord[:kop]
 
 def lexenEguneratzea(gehitzeko,hie,tok_kop):
     print("Lex-ak eguneratuko dira",hie.lower(),len(gehitzeko))
@@ -30,7 +27,10 @@ def lexenEguneratzea(gehitzeko,hie,tok_kop):
         with open(flex_ize,"rb") as flex:
             fList = flex.readlines()[:-1]
             for eng,eusak in gehitzeko.items():
+                i = 0
+                #eusak = rcHandienekoak(eusak,4)
                 for ordT in eusak:
+                    i += 1
                     eus = ordT.getKarKatea()
                     if eus[-1] == ";":
                         eus = eus[:-1]
@@ -54,22 +54,30 @@ def lexenEguneratzea(gehitzeko,hie,tok_kop):
                             else:
                                 if posE not in ["Izenondo","Izenlagun","Adjektibo"]:
                                     posE = posL
+                    if hie != "QUALIFIER":
+                        if "Izen" in pos:
+                            posE = "Izen"
                         else:
                             posE = posL
-                    if tok_kop == 1 and posE == "Izenondo":# eus in adj_hiz:
+                        
+                    #if tok_kop == 1 and posE == "Izenondo":# eus in adj_hiz:
+                    if posE == "Izenondo":# eus in adj_hiz:
                         #print(eus,adj_hiz[eus])
                         eus += "&&&ADJK"#+adj_hiz[eus].strip()
-                    elif tok_kop == 1 and posE == "Izenlagun":
+                        #elif tok_kop == 1 and posE == "Izenlagun":
+                    elif posE == "Izenlagun":
                         eus += "&&&IZLK"#+adj_hiz[eus].strip()
-                    elif tok_kop == 1 and posE == "Adjektibo":
+                    elif posE == "Adjektibo":
+                        #elif tok_kop == 1 and posE == "Adjektibo":
                         if len(eus)>3 and eus[-3:] == "ren":
                             eus += "&&&IZLK"#+adj_hiz[eus].strip()
                         elif len(eus)>3 and eus[-3] != "i" and eus[-2:] in ["ko","go"]:
                             eus += "&&&IZLK"
                         else:
                             eus += "&&&ADJK"
+                        
                     lagStr = eng+':'+eus.replace(' ','_')+' #;\n'
-                    lagStr.replace("<","%<").replace(">","%>")
+                    lagStr = lagStr.replace("%","%%").replace("<","%<").replace(">","%>")
                     if lagStr.encode('utf-8') not in fList:
                         fList.append(lagStr.encode('utf-8'))
             fList.append(b'END\n')
@@ -78,13 +86,61 @@ def lexenEguneratzea(gehitzeko,hie,tok_kop):
             fout.write(lag.decode('utf-8'))
 
 
-def lexentzat(ordList,gehitzeko,termLag):
+def lexentzat(ordList,gehitzeko,termLag,zb):
+    zerrendaBeltza = zb.get(termLag.lower(),[])
+    termLag = termLag.replace(" ","_")
     for ordL in ordList:
         ordT = OrdainTBXItzulDB(ordL)
+        if ordT.getKarKatea() in zerrendaBeltza:
+            continue
         if termLag in gehitzeko:
             gehitzeko[termLag].add(ordT)
         else:
             gehitzeko[termLag] = {ordT}
+
+def pluralaGehitu(hitza):
+    p2 = subprocess.Popen(['flookup -i -x -b  scriptak/foma/deklinabideak.fst'],stdin=PIPE,stdout=PIPE,shell=True)
+    hitza += "+ak"
+    returnwords = p2.communicate(input=hitza.encode('utf8'))
+    plurala = returnwords[0].decode('utf8').split('\n')[0]
+    #print(hitza,plurala)
+    return plurala
+
+def generoaEbatzi(term,hasha):
+    lag = term[:-1]+"o"
+    return hasha.get(lag,None)
+
+
+def pluralaEbatzi(term,hasha,hiz,zb):
+    lag = term[:-1]
+    ordList = None
+    #print("pluralaEbatzi",term)
+    if lag in hasha:
+        ordList = deepcopy(hasha[lag])
+        zerrendaBeltza = zb.get(lag.lower(),[])
+    else:
+        if lag[-1] == "e":
+            lag2 = lag[:-1]
+            ordList = deepcopy(hasha.get(lag2,None))
+            zerrendaBeltza = zb.get(lag2.lower(),[])
+        elif lag[-1] == "a" and hiz == "es":
+            lag2 = term[:-1]+"o"
+            ordList = deepcopy(hasha.get(lag2,None))
+            zerrendaBeltza = zb.get(lag2.lower(),[])
+    if ordList:
+        for ordL in ordList:
+            ordainI = OrdainTBXItzulDB(ordL)
+            if "Izen" not in ordainI.getPOSzerrenda(): # Ez da string bat, zerrenda bat baizik!!!
+                ordList.remove(ordL) #Plurala izateko, izena izan behar da. Gainerako ordainak ezabatu zerrendatik.
+                continue
+            ordT = ordL.find('term')
+            if ordT.text in zerrendaBeltza:
+                ordList.remove(ordL) #Singularra zerrenda beltzean badago, ezabatu.
+                continue
+            plurala = pluralaGehitu(ordT.text)
+            ordT.text = plurala
+    return ordList
+
 
 
 #@profile
@@ -101,13 +157,13 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
     tf_emaitzak.close()
     tf_adj_hiz.close()
     tf_kat_hiz.close()
-    p = subprocess.call('./itzuli.py '+hie+' '+str(tok_kop)+" "+str(i_min)+" "+str(i_max)+' '+path+' '+emFitx+' '+tf_emaitzak.name+' '+tf_adj_hiz.name+' '+tf_kat_hiz.name+' '+tf_egun.name+' '+tf_ord_h.name+' '+tf_ema.name,shell=True)
+    p = subprocess.call('python3 itzuli.py '+hie+' '+str(tok_kop)+" "+str(i_min)+" "+str(i_max)+' '+path+' '+emFitx+' '+tf_emaitzak.name+' '+tf_adj_hiz.name+' '+tf_kat_hiz.name+' '+tf_egun.name+' '+tf_ord_h.name+' '+tf_ema.name,shell=True)
     egun = pickle.load(tf_egun)
     ord_h = pickle.load(tf_ord_h)
     ema = pickle.load(tf_ema)
-    #print(hie,'egun',egun)
-    #print(hie,'ord',ord_h)
-    #print(hie,'ema',ema)
+    # print(hie,'egun',egun)
+    # print(hie,'ord',ord_h)
+    # print(hie,'ema',ema)
     tf_egun.close()
     tf_ord_h.close()
     tf_ema.close()
@@ -118,40 +174,67 @@ def itzulpenaKudeatu(hie,tok_kop,i_min,i_max,path,itzulDBeng,emFitx,emaitzak,adj
             snomed.kargatu(hie,"_ald")
         else:
             snomed.kargatu(hie)
+            if hie in ['SITUATION','EVENT',"FINDING",'DISORDER']:
+                snomed.mapGNS(ema)
     else:
         snomed.kargatu(hie,'_ald')
-
+    print(colored(hie+' gehitzeko prest '+str(len(egun)),"red"))
     gehitzeko = {}
     for eg in egun:
+        #print(eg)
         ordList = eg['ordList']
         termS = snomed.getTerminoTBX(eg["term"]) #TerminoTBXSnomedo objektua itzultzen du
         term = termS.getTerminoa()
+        # if term.lower() == "abdominal aorta":
+        #     print("abdominal aorta egun-en, ordlist aztertzen")
+        #     print(ordList)
         if type(ordList) == type('kuku'):
             ord_lag = ord_h[ordList]
+            #print("Ordain berria da")
+            #print(1,term,ord_lag['ordList'],ord_lag['entrySource'])
             ap = ''
             if "apl_patroiak" in ord_lag:
                 ap = ord_lag["apl_patroiak"]
             lock.acquire()
             ordList = itzulDBeng.gehitu(ord_lag['ordList'],term,ord_lag['entrySource'],ord_lag['caseSig'],ord_lag['pOS'],ord_lag['tT'],ord_lag['rC'],ap)
+            #print(2,ordList)
             itzulEnHash[term] = ordList
             lock.release()
         elif type(ordList) == type(1):
-            lock.acquire()
-            if ordList == 0:
+            #print("Ordaina ItzulDB-tik hartu da",term)
+            if termS.getUsageNote() == "InitialInsensitive":
+                term = term[0].lower()+term[1:]
+            elif termS.getUsageNote() == "Insensitive":
+                term = term.lower()
+            #lock.acquire()
+            if ordList == 0: #Ingelesetik jasotako ordaina(k)
                 ordList = itzulEnHash.get(term.lower())
-            else:
+                if ordList == None:
+                    #plurala
+                    if term.endswith("s"):
+                        ordList = pluralaEbatzi(term.lower(),itzulEnHash,"en",eg["zb"])
+            else: #Gaztelaniatik jasotako ordaina(k)
                 ordList = itzulSpHash.get(term.lower())
-            lock.release()
+                if ordList == None:
+                    #plurala eta generoa
+                    if term.endswith("s"):
+                        ordList = pluralaEbatzi(term.lower(),itzulSpHash,"es",eg["zb"])
+                    elif term.endswith("a"):
+                        ordList = generoaEbatzi(term.lower(),itzulSpHash)
+                
+
+            #lock.release()
         else:
             print(ordList)
         konTBX = snomed.getKontzeptuTBX(eg["konTBX"][1:])
         if not konTBX:
             print("EZ DAKIT ZER GERTATZEN DEN!!",hie,eg)
-
-        konTBX.eguneratu(ordList,termS.term,eg['ema'],eg['zb']) #termS.term erabili behar da, kontutan izan nTig objektua bera berreskuratu nahi dugula
-        #print(term,termS.getHizkuntza())
+        konTBX.eguneratu(ordList,termS.term,ema,eg['zb']) #termS.term erabili behar da, kontutan izan nTig objektua bera berreskuratu nahi dugula
+        #print("lexentzat if-aren aurretik",term,termS.getHizkuntza())
         if ordList != 1 and termS.getHizkuntza() == "en":
-            lexentzat(ordList,gehitzeko,term.replace(' ','_'))
+            #print("lexentzat if-ean",term)
+            lexentzat(ordList,gehitzeko,term,eg['zb'])
+    print(colored(hie+' gehituta',"red"))
 
     lexenEguneratzea(gehitzeko,hie,tok_kop)
     snomed.gorde()
@@ -205,10 +288,10 @@ def main(args):
     emaDen = Emaitzak("DENAK","")
     emaitzak = {}
     i_min = 1
-    i_max = 8
+    i_max = 9
     #i_max = 52
     pat_app = {}
-    pool = ThreadPool(processes=6)
+    pool = ThreadPool(processes=3)
     lock = Lock()
     for tok_kop in range(i_min,i_max):
         print("Itzulpena hasiko da: "+str(tok_kop)+" tokenetarako")  
@@ -246,8 +329,6 @@ def main(args):
     itzulDBeng.fitxategianGorde()
     with codecs.open(emFitx,'a',encoding='utf-8') as fitx:
         fitx.write(emaDen.idatzi())
-    #itzulDBspa.fitxategianGorde()
-    #with open(emFitx) as fem:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SNOMED CT euskaratzeko aplikazioa.")

@@ -20,3 +20,10 @@ class OrdainTBXItzulDB(OrdainTBX):
 
     def getPOS(self):
         return self.ordain.findall('termNote[@type="partOfSpeech"]')
+
+    def getPOSzerrenda(self):
+        zerrenda = []
+        for pos in self.ordain.findall('termNote[@type="partOfSpeech"]'):
+            zerrenda.append(pos.text)
+        return zerrenda
+
